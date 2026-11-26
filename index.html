@@ -73,7 +73,23 @@ input[type=checkbox],input[type=radio]{width:20px;height:20px;accent-color:var(-
 .alert .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .progress{height:10px;background:var(--bg);border:1px solid var(--line);border-radius:6px;overflow:hidden}
 .progress>span{display:block;height:100%;width:0;background:var(--primary);transition:width .2s}
-.examples{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;height:100px;align-items:center;justify-items:center;background:var(--bg);border-radius:8px;margin-bottom:10px}
+.samples{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:10px}
+.sample{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;min-height:44px;padding:10px 8px;border:1px solid var(--muted);border-radius:10px;background:var(--white);color:var(--text);font:inherit;font-size:14px;line-height:1.3;text-align:center;cursor:pointer}
+.sample:hover{border-color:var(--primary);background:#F4F0FC}
+.sample img{width:72px;height:72px;object-fit:contain;border-radius:8px;background:var(--bg)}
+.sample b{display:block}
+.sample .small{display:block;color:var(--muted);font-size:13px}
+.ex-list{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:12px}
+.ex{display:grid;grid-template-columns:72px 18px 72px minmax(0,1fr);gap:8px;align-items:center}
+.ex canvas{width:72px;height:72px;border-radius:8px;border:1px solid var(--line);background:var(--bg)}
+.ex p{margin:0;font-size:14px}
+.ex .verdict{display:block;font-weight:700}
+.ex .verdict.good{color:var(--ok)}.ex .verdict.bad{color:var(--warn)}
+.spool{flex:none;width:32px;height:40px}
+.skipped .spool{opacity:.45}
+.badge{display:inline-flex;align-items:center;min-height:26px;padding:2px 10px;border-radius:999px;background:var(--ink);color:var(--white);font-size:13px;font-weight:700;white-space:nowrap}
+.skipped .badge{background:var(--bg);color:var(--text);border:1px solid var(--muted)}
+ol.threads>li{background:linear-gradient(90deg,var(--bg),var(--white) 56px)}
 .toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
 .seg{display:inline-flex;border:1px solid var(--muted);border-radius:8px;overflow:hidden}
 .seg button{min-height:44px;padding:0 14px;border:0;background:var(--white);color:var(--text);font:500 14px inherit;cursor:pointer}
@@ -169,10 +185,15 @@ dialog::backdrop{background:rgba(2,12,40,.6)}
         <span class="small muted">PNG, JPG, WebP, GIF or SVG, up to 20 MB. You can also paste an image with Ctrl+V (Cmd+V on Mac). Saved StitchKit projects (.json) open here too.</span>
         <input id="file" class="sr-only" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.json,application/json">
       </label>
-      <div class="row" style="gap:12px;align-items:center">
-        <button class="btn" id="sample" type="button">Try a sample design</button>
-        <button class="btn link" id="how" type="button">How does this work?</button>
+      <div>
+        <h2 id="h-samples">No artwork handy? Start with a sample</h2>
+        <ul class="samples" id="samples" aria-labelledby="h-samples">
+          <li><button class="sample" type="button" data-sample="bird"><img alt="" width="72" height="72" data-thumb="bird"><span><b>Bird</b><span class="small">Flat illustration</span></span></button></li>
+          <li><button class="sample" type="button" data-sample="badge"><img alt="" width="72" height="72" data-thumb="badge"><span><b>Badge</b><span class="small">Geometric, 3 colors</span></span></button></li>
+          <li><button class="sample" type="button" data-sample="monogram"><img alt="" width="72" height="72" data-thumb="monogram"><span><b>Monogram</b><span class="small">Letter M, 4 colors</span></span></button></li>
+        </ul>
       </div>
+      <div><button class="btn link" id="how" type="button">How does this work?</button></div>
       <div id="upload-status" aria-live="polite"></div>
     </div>
     <aside class="side stack" aria-label="Tips and machine setup">
@@ -187,9 +208,22 @@ dialog::backdrop{background:rgba(2,12,40,.6)}
       </div>
       <div class="card">
         <h2>Works best with</h2>
-        <div class="examples" aria-hidden="true"><span style="width:40px;height:40px;border-radius:50%;background:#36069A"></span><span style="width:40px;height:40px;background:#DE6399"></span><span style="width:40px;height:40px;border-radius:8px;background:#4ADEDE"></span></div>
+        <ul class="ex-list">
+          <li class="ex">
+            <canvas width="144" height="144" data-ex-src="logo" role="img" aria-label="Artwork: flat logo, a hexagon badge in 3 solid colors"></canvas>
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#36069A" stroke-width="2.5"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
+            <canvas width="144" height="144" data-ex-out="logo" role="img" aria-label="Stitched preview of the logo: crisp shapes, clean edges"></canvas>
+            <p><span class="verdict good">Flat logo</span>Clean stitches</p>
+          </li>
+          <li class="ex">
+            <canvas width="144" height="144" data-ex-src="photo" role="img" aria-label="Artwork: photo of a sunset with soft gradients"></canvas>
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#36069A" stroke-width="2.5"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
+            <canvas width="144" height="144" data-ex-out="photo" role="img" aria-label="Stitched preview of the photo: blotchy color bands and lost detail"></canvas>
+            <p><span class="verdict bad">Photo</span>Muddy result</p>
+          </li>
+        </ul>
         <p><strong>Yes:</strong> logos, icons and flat illustrations with clear shapes and 2 to 8 colors.</p>
-        <p class="muted small" style="margin:0"><strong>Harder:</strong> photos, gradients and tiny text. They still convert, but expect a simplified result.</p>
+        <p class="muted small" style="margin:0"><strong>Harder:</strong> photos, gradients and tiny text. They still convert, but expect a simplified result. Both previews above are made live by the same engine that builds your file.</p>
       </div>
     </aside>
   </div>
@@ -277,7 +311,7 @@ dialog::backdrop{background:rgba(2,12,40,.6)}
         </div>
         <div>
           <h3>Stitch order</h3>
-          <p class="small muted">The first color stitches first. Use the arrows to reorder.</p>
+          <p class="small muted">The first spool stitches first. Use the arrows to reorder. Machine color numbers match your Brother's built-in thread list.</p>
           <ol class="threads" id="threads"></ol>
         </div>
         <button class="btn primary big" type="button" id="to-download">Continue to download</button>
@@ -1006,6 +1040,7 @@ function setStep(n, focus = true) {
   announce(['', 'Step 1 of 3: Upload', 'Step 2 of 3: Adjust threads', 'Step 3 of 3: Download'][n]);
   if (n === 2) requestAnimationFrame(draw);
   if (n === 3) buildDownload();
+  if (n === 1) setTimeout(renderExamples, 400);
   window.scrollTo(0, 0);
 }
 
@@ -1031,12 +1066,13 @@ async function intakeFile(file) {
   if (file.size > 20 * 1024 * 1024) return status(st, 'err', 'That file is larger than 20 MB', 'Save a smaller version of the image and try again.');
   const url = URL.createObjectURL(file);
   try { const img = await loadImg(url); await intakeImage(img, file.name); }
-  catch (e) { status(st, 'err', "We couldn't read that file", 'It may be damaged or in a format your browser does not support. Try saving it as PNG.'); }
+  catch (e) { intakeActive = false; status(st, 'err', "We couldn't read that file", 'It may be damaged or in a format your browser does not support. Try saving it as PNG.'); }
   finally { URL.revokeObjectURL(url); }
 }
 function loadImg(src) { return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; }); }
+let intakeActive = false;
 async function intakeImage(img, name, state) {
-  const st = $('#upload-status');
+  const st = $('#upload-status'); intakeActive = true;
   progress(st, 'Reading your image…', 20);
   let w = img.naturalWidth || 1000, hgt = img.naturalHeight || 1000;
   const big = Math.max(w, hgt) > 1000, isSvg = /svg/i.test(img.src.slice(0, 40)) || !img.naturalWidth;
@@ -1062,7 +1098,7 @@ async function intakeImage(img, name, state) {
   const pw = $('#photo-warn'); pw.replaceChildren();
   if (S.info.photoLike) status(pw, 'warn', 'This looks like a photo', 'Embroidery works best with 2 to 8 flat colors, so we simplified it. Fewer colors give cleaner results.');
   await requant_(!state);
-  st.replaceChildren();
+  st.replaceChildren(); intakeActive = false;
   setStep(2);
   pushHist();
 }
@@ -1118,19 +1154,26 @@ function syncControls() {
   $('#hoop').value = S.hoop; $('#hoop2').value = S.hoop;
   document.querySelectorAll('input[name=fabric]').forEach(r => { r.checked = r.value.toUpperCase() === S.fabric.toUpperCase(); });
 }
+function spool(rgb) {
+  const s = document.createElement('span'); s.className = 'spool';
+  s.innerHTML = `<svg aria-hidden="true" width="32" height="40" viewBox="0 0 32 40"><rect x="1.5" y="1.5" width="29" height="5" rx="2" fill="#ADB5BD" stroke="#6C757D"/><rect x="6" y="6.5" width="20" height="27" fill="${hex(rgb)}" stroke="#6C757D"/><path d="M6 11.5h20M6 16.5h20M6 21.5h20M6 26.5h20" stroke="rgba(2,12,40,.22)"/><path d="M9 7v26" stroke="rgba(255,255,255,.35)" stroke-width="2"/><rect x="1.5" y="33.5" width="29" height="5" rx="2" fill="#ADB5BD" stroke="#6C757D"/></svg>`;
+  return s;
+}
 function renderThreads() {
   const ol = $('#threads'); ol.replaceChildren();
   S.order.forEach((ci, pos) => {
     const c = S.colors[ci]; const open = S.open === ci;
     const low = contrast(c.rgb, rgbOf(S.fabric)) < 1.5;
     const li = h('li', { class: (open ? 'open ' : '') + (c.skip ? 'skipped' : ''), 'data-ci': ci });
+    const pec = skPecName(c.rgb);
     const head = h('div', { class: 'thead' },
-      h('span', { class: 'dot', style: 'background:' + hex(c.rgb), 'aria-hidden': 'true' }),
-      h('div', { class: 'tname' }, h('b', {}, `${pos + 1} · ${c.name}`), h('span', { 'data-count': ci }, c.skip ? 'Skipped' : '…')),
+      spool(c.rgb),
+      h('div', { class: 'tname' }, h('b', {}, `${pos + 1} · ${c.name}`), h('span', {}, `Machine color #${pec.index}` + (pec.name !== c.name ? ` · ${pec.name}` : ''))),
+      h('span', { class: 'badge', 'data-count': ci }, c.skip ? 'Skipped' : '…'),
       h('div', { class: 'tbtns' },
       h('button', { class: 'btn icon', type: 'button', 'aria-label': `Move ${c.name} up`, disabled: pos === 0, 'data-act': 'up', onclick: () => move(ci, -1) }, '↑'),
       h('button', { class: 'btn icon', type: 'button', 'aria-label': `Move ${c.name} down`, disabled: pos === S.order.length - 1, 'data-act': 'down', onclick: () => move(ci, 1) }, '↓'),
-      h('button', { class: 'btn icon', type: 'button', 'aria-expanded': open ? 'true' : 'false', 'aria-controls': 'tb-' + ci, 'aria-label': `${open ? 'Close' : 'Edit'} ${c.name} settings`, 'data-act': 'edit',
+      h('button', { class: 'btn icon', type: 'button', 'aria-expanded': open ? 'true' : 'false', 'aria-controls': 'tb-' + ci, 'aria-label': `${open ? 'Done editing' : 'Edit'} ${c.name}`, 'data-act': 'edit',
         onclick: () => { S.open = open ? -1 : ci; renderThreads(); ol.querySelector(`[data-ci="${ci}"] [data-act=edit]`).focus(); } }, open ? 'Done' : 'Edit')));
     li.append(head);
     if (low && !c.skip) li.append(h('p', { class: 'note' }, `Low contrast on ${fabricName()} fabric. Try a lighter or darker thread.`));
@@ -1142,7 +1185,7 @@ function renderThreads() {
 function threadBody(ci) {
   const c = S.colors[ci], id = s => `t${ci}-${s}`;
   const set = (k, v, re) => { c[k] = v; pushHist(); if (re) renderThreads(); schedulePlan(); };
-  const sel = h('select', { id: id('pal'), onchange: e => { if (e.target.value === '') return; const t = PEC_THREADS[+e.target.value]; c.rgb = [t[0], t[1], t[2]]; c.name = t[3]; pushHist(); renderThreads(); refocus(ci, 'pal'); schedulePlan(); } },
+  const sel = h('select', { id: id('pal'), 'aria-label': 'Or pick a machine color', onchange: e => { if (e.target.value === '') return; const t = PEC_THREADS[+e.target.value]; c.rgb = [t[0], t[1], t[2]]; c.name = t[3]; pushHist(); renderThreads(); refocus(ci, 'pal'); schedulePlan(); } },
     h('option', { value: '' }, 'Choose a machine color…'), ...PEC_THREADS.map((t, i) => t ? h('option', { value: i }, t[3]) : null));
   const others = S.order.filter(o => o !== ci);
   const range = (key, label, min, max, step, unit) => h('div', {},
@@ -1186,7 +1229,7 @@ function updateCounts() {
   if (!S.result) return;
   const m = new Map(S.result.meta.map(x => [x.index, x]));
   document.querySelectorAll('[data-count]').forEach(el => { const ci = +el.dataset.count, x = m.get(ci);
-    el.textContent = S.colors[ci] && S.colors[ci].skip ? 'Skipped' : x ? `${x.stitches.toLocaleString()} stitches` + (skPecName(S.colors[ci].rgb).name !== S.colors[ci].name ? ` · machine: ${skPecName(S.colors[ci].rgb).name}` : '') : ''; });
+    el.textContent = S.colors[ci] && S.colors[ci].skip ? 'Skipped' : x ? `${x.stitches.toLocaleString()} stitches` : '…'; });
 }
 function renderStats() {
   const r = S.result.stats, mins = Math.max(1, Math.round(r.count / 600 + r.colors * 0.5));
@@ -1385,7 +1428,7 @@ async function loadProject(file) {
       widthMM: +s.widthMM || null, preset: PRESETS[s.preset] ? s.preset : 'woven' };
     if (s.hoop && /^\d+x\d+$/.test(s.hoop)) S.hoop = s.hoop;
     await intakeImage(img, j.name || 'design', state);
-  } catch (e) { status(st, 'err', "That isn't a StitchKit project file", 'Open a .json file saved from StitchKit, or upload an image instead.'); }
+  } catch (e) { intakeActive = false; status(st, 'err', "That isn't a StitchKit project file", 'Open a .json file saved from StitchKit, or upload an image instead.'); }
 }
 
 /* ---------- wiring ---------- */
@@ -1395,7 +1438,83 @@ const drop = $('#drop');
 ['dragleave', 'drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
 drop.addEventListener('drop', e => intakeFile(e.dataTransfer.files[0]));
 document.addEventListener('paste', e => { if (S.step !== 1) return; const it = [...(e.clipboardData || {}).items || []].find(i => i.type.startsWith('image/')); if (it) intakeFile(it.getAsFile()); });
-$('#sample').addEventListener('click', async () => { const img = await loadImg('data:image/png;base64,' + SAMPLE_PNG); intakeImage(img, 'bird-of-paradise'); });
+/* ---------- starter samples (original art, MIT) ---------- */
+const svgURL = svg => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+const SAMPLES = {
+  bird: { name: 'bird-of-paradise', src: 'data:image/png;base64,' + SAMPLE_PNG },
+  badge: { name: 'geometric-badge', src: svgURL('<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="0 0 1000 1000">' +
+    '<polygon points="500,40 898,270 898,730 500,960 102,730 102,270" fill="#020C28"/>' +
+    '<polygon points="500,135 816,317 816,683 500,865 184,683 184,317" fill="none" stroke="#4ADEDE" stroke-width="46"/>' +
+    '<circle cx="540" cy="420" r="115" fill="#DE6399"/>' +
+    '<polygon points="255,690 420,440 510,570 600,480 745,690" fill="#4ADEDE"/>' +
+    '<rect x="320" y="720" width="360" height="56" rx="28" fill="#DE6399"/></svg>') },
+  monogram: { name: 'monogram-m', src: svgURL('<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="0 0 1000 1000">' +
+    '<circle cx="500" cy="500" r="460" fill="#36069A"/>' +
+    '<circle cx="500" cy="500" r="385" fill="none" stroke="#DE6399" stroke-width="44"/>' +
+    '<polygon points="320,320 405,320 500,465 595,320 680,320 680,650 600,650 600,450 500,600 400,450 400,650 320,650" fill="#FFFFFF"/>' +
+    '<rect x="380" y="690" width="240" height="48" rx="24" fill="#4ADEDE"/></svg>') }
+};
+document.querySelectorAll('[data-thumb]').forEach(im => { im.src = SAMPLES[im.dataset.thumb].src; });
+$('#samples').addEventListener('click', async e => {
+  const b = e.target.closest('[data-sample]'); if (!b || intakeActive) return;
+  const sm = SAMPLES[b.dataset.sample];
+  try { const img = await loadImg(sm.src); await intakeImage(img, sm.name); }
+  catch (err) { intakeActive = false; status($('#upload-status'), 'err', "That sample didn't load", 'Reload the page and try again.'); }
+});
+
+/* ---------- "works best with" examples, rendered live by the engine ---------- */
+function photoArt(n) {
+  const c = document.createElement('canvas'); c.width = c.height = n; const g = c.getContext('2d', { willReadFrequently: true });
+  const sky = g.createLinearGradient(0, 0, 0, n); sky.addColorStop(0, '#36069A'); sky.addColorStop(.55, '#DE6399'); sky.addColorStop(1, '#F6B27A');
+  g.fillStyle = sky; g.fillRect(0, 0, n, n);
+  const sun = g.createRadialGradient(n * .62, n * .5, 1, n * .62, n * .5, n * .3); sun.addColorStop(0, 'rgba(255,240,200,1)'); sun.addColorStop(1, 'rgba(255,240,200,0)');
+  g.fillStyle = sun; g.fillRect(0, 0, n, n);
+  g.filter = 'blur(2px)'; g.fillStyle = '#1B1440'; g.beginPath(); g.moveTo(0, n * .74); g.quadraticCurveTo(n * .3, n * .58, n * .55, n * .78); g.quadraticCurveTo(n * .8, n * .64, n, n * .72); g.lineTo(n, n); g.lineTo(0, n); g.fill(); g.filter = 'none';
+  const d = g.getImageData(0, 0, n, n); let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < d.data.length; i += 4) { const k = (rnd() - .5) * 30; d.data[i] += k; d.data[i + 1] += k; d.data[i + 2] += k; }
+  g.putImageData(d, 0, 0); return c;
+}
+function drawMini(cv, r, fabric) {
+  const g = cv.getContext('2d'), W = cv.width, H = cv.height, st = r.stitches;
+  g.fillStyle = fabricPattern(g, fabric); g.fillRect(0, 0, W, H);
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const s of st) if (s[2] === 1) { if (s[0] < x0) x0 = s[0]; if (s[0] > x1) x1 = s[0]; if (s[1] < y0) y0 = s[1]; if (s[1] > y1) y1 = s[1]; }
+  const pad = 10, sc = Math.min((W - pad * 2) / (x1 - x0 || 1), (H - pad * 2) / (y1 - y0 || 1)), ox = W / 2 - (x0 + x1) / 2 * sc, oy = H / 2 - (y0 + y1) / 2 * sc;
+  g.lineWidth = Math.max(1, 4 * sc); g.lineCap = 'round';
+  let ti = 0, prev = null, paths = [new Path2D(), new Path2D()];
+  const flush = () => { const rgb = r.threads[ti] || [0, 0, 0]; [0.85, 1.12].forEach((f, i) => { g.strokeStyle = shade(rgb, f); g.stroke(paths[i]); }); paths = [new Path2D(), new Path2D()]; };
+  for (const [x, y, c] of st) {
+    if (c === 4) { flush(); ti++; prev = null; continue; }
+    if (c !== 1) { prev = null; continue; }
+    const p = [ox + x * sc, oy + y * sc];
+    if (prev) { const band = Math.abs(Math.cos(Math.atan2(p[1] - prev[1], p[0] - prev[0]) - Math.PI / 4)) > .5 ? 1 : 0; paths[band].moveTo(prev[0], prev[1]); paths[band].lineTo(p[0], p[1]); }
+    prev = p;
+  }
+  flush();
+}
+let examplesDone = false;
+async function renderExamples() {
+  if (examplesDone) return; examplesDone = true;
+  const logoImg = await loadImg(SAMPLES.badge.src).catch(() => null);
+  const jobs = [['logo', logoImg, null], ['photo', photoArt(144), 6]];
+  for (const [key, art, k] of jobs) {
+    if (!art) continue;
+    const src = document.querySelector(`[data-ex-src="${key}"]`), out = document.querySelector(`[data-ex-out="${key}"]`);
+    const g = src.getContext('2d', { willReadFrequently: true }); g.clearRect(0, 0, src.width, src.height); g.drawImage(art, 0, 0, src.width, src.height);
+    // The main-thread engine is shared with the no-Worker fallback, so never run while an upload is in progress.
+    await new Promise(res => (window.requestIdleCallback || setTimeout)(res, { timeout: 1500 }));
+    if (intakeActive) { examplesDone = false; return; }
+    try {
+      const d = g.getImageData(0, 0, src.width, src.height);
+      const info = SKE.load(src.width, src.height, d.data);
+      const q = SKE.quantize(k || Math.max(1, Math.min(8, info.estimatedColors)), false), pre = PRESETS.woven;
+      const colors = q.palette.map(rgb => ({ rgb, skip: false, angle: null, density: pre.density, stitchLen: pre.stitchLen, underlay: false, pull: pre.pull }));
+      const order = q.palette.map((_, i) => i).sort((a, b) => q.areas[b] - q.areas[a]);
+      drawMini(out, SKE.plan({ widthMM: 40, colors, order }), '#E9DCC9');
+    } catch (err) { /* examples are decorative extras; the app works without them */ }
+  }
+}
+window.addEventListener('load', () => setTimeout(renderExamples, 400));
 $('#how').addEventListener('click', () => $('#howto').showModal());
 $('#privacy-open').addEventListener('click', () => $('#privacy').showModal());
 const hoopChange = v => { const from = hoopMM(); S.hoop = v; store.set('hoop', v); if (S.palette.length) { fitToHoop(); } syncControls(); setHoopAnimated(from); };
