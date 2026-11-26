@@ -229,10 +229,14 @@ dialog::backdrop{background:rgba(2,12,40,.6)}
         </div>
         <div id="photo-warn"></div>
         <div>
-          <label class="field" for="count">Number of colors: <output id="count-out" for="count">3</output></label>
-          <input type="range" id="count" min="1" max="12" value="3">
+          <label class="field" for="count">Thread colors: <output id="count-out" for="count">3</output></label>
+          <input type="range" id="count" min="1" max="12" value="3" aria-describedby="count-note">
+          <p class="small muted" id="count-note" style="margin:6px 0 0"></p>
         </div>
-        <label class="check" id="bg-wrap" hidden><input type="checkbox" id="bg"> Remove background color</label>
+        <div id="bg-wrap" hidden>
+          <label class="check"><input type="checkbox" id="bg" aria-describedby="bg-note"> Leave out the background <span class="dot" id="bg-dot" style="width:20px;height:20px" aria-hidden="true"></span></label>
+          <p class="small muted" id="bg-note" style="margin:0"></p>
+        </div>
         <div>
           <label class="field" for="preset">Fabric preset</label>
           <select id="preset">
@@ -364,6 +368,7 @@ const SKE = (() => {
     for (let i = 0; i < W * H; i++) {
       const o = i * 4;
       if (RGBA[o + 3] < 128) { transparent++; continue; }
+      if (RGBA[o + 3] < 250) continue;
       const key = ((RGBA[o] >> 3) << 10) | ((RGBA[o + 1] >> 3) << 5) | (RGBA[o + 2] >> 3);
       hist.set(key, (hist.get(key) || 0) + 1);
     }
@@ -374,13 +379,13 @@ const SKE = (() => {
     for (const c of major) if (!merged.some(m => dist2(m, c) < 40 * 40)) merged.push(c);
     // border color for solid backgrounds
     const border = new Map(); let bn = 0;
-    const addB = (x, y) => { const o = (y * W + x) * 4; if (RGBA[o + 3] < 128) return; bn++; const k = ((RGBA[o] >> 4) << 8) | ((RGBA[o + 1] >> 4) << 4) | (RGBA[o + 2] >> 4); border.set(k, (border.get(k) || 0) + 1); };
+    const bsum = new Map(); const addB = (x, y) => { const o = (y * W + x) * 4; if (RGBA[o + 3] < 128) return; bn++; const k = ((RGBA[o] >> 4) << 8) | ((RGBA[o + 1] >> 4) << 4) | (RGBA[o + 2] >> 4); border.set(k, (border.get(k) || 0) + 1); const s = bsum.get(k) || [0, 0, 0]; s[0] += RGBA[o]; s[1] += RGBA[o + 1]; s[2] += RGBA[o + 2]; bsum.set(k, s); };
     for (let x = 0; x < W; x++) { addB(x, 0); addB(x, H - 1); }
     for (let y = 0; y < H; y++) { addB(0, y); addB(W - 1, y); }
     let solidBg = null;
     if (bn > (W + H)) {
       const top = [...border.entries()].sort((a, b) => b[1] - a[1])[0];
-      if (top && top[1] > bn * 0.6) solidBg = [((top[0] >> 8) & 15) * 16 + 8, ((top[0] >> 4) & 15) * 16 + 8, (top[0] & 15) * 16 + 8];
+      if (top && top[1] > bn * 0.6) solidBg = bsum.get(top[0]).map(v => Math.round(v / top[1]));
     }
     const distinct = hist.size;
     const photo = merged.length > 10 || (distinct > 3000 && major.length < distinct * 0.01 && merged.length > 8);
@@ -391,7 +396,8 @@ const SKE = (() => {
   function quantize(k, removeBg, seed = 7) {
     const rand = rng(seed); const pts = [];
     const total = W * H, step = Math.max(1, Math.floor(total / 30000));
-    for (let i = 0; i < total; i += step) { const o = i * 4; if (RGBA[o + 3] >= 128) pts.push([RGBA[o], RGBA[o + 1], RGBA[o + 2]]); }
+    for (let i = 0; i < total; i += step) { const o = i * 4; if (RGBA[o + 3] >= 250) pts.push([RGBA[o], RGBA[o + 1], RGBA[o + 2]]); }
+    if (pts.length < 8) for (let i = 0; i < total; i += step) { const o = i * 4; if (RGBA[o + 3] >= 128) pts.push([RGBA[o], RGBA[o + 1], RGBA[o + 2]]); }
     const K = Math.min(k + (removeBg ? 1 : 0), 16);
     // k-means++ init
     const cent = [pts[Math.floor(rand() * pts.length)].slice()];
@@ -404,6 +410,7 @@ const SKE = (() => {
       for (const p of pts) { let bi = 0, bd = Infinity; for (let c = 0; c < cent.length; c++) { const d = dist2(p, cent[c]); if (d < bd) { bd = d; bi = c; } } const a = acc[bi]; a[0] += p[0]; a[1] += p[1]; a[2] += p[2]; a[3]++; }
       cent.forEach((c, i) => { const a = acc[i]; if (a[3]) { c[0] = a[0] / a[3]; c[1] = a[1] / a[3]; c[2] = a[2] / a[3]; } });
     }
+    for (let a = 0; a < cent.length; a++) for (let b = cent.length - 1; b > a; b--) if (dist2(cent[a], cent[b]) < 28 * 28) cent.splice(b, 1);
     labels = new Int16Array(total);
     const counts = new Array(cent.length).fill(0);
     for (let i = 0; i < total; i++) {
@@ -411,6 +418,18 @@ const SKE = (() => {
       const p = [RGBA[o], RGBA[o + 1], RGBA[o + 2]]; let bi = 0, bd = Infinity;
       for (let c = 0; c < cent.length; c++) { const d = dist2(p, cent[c]); if (d < bd) { bd = d; bi = c; } }
       labels[i] = bi; counts[bi]++;
+    }
+    // clusters that only catch anti-aliased edge pixels (under 0.4% of the art) are folded into their nearest real color
+    const opaqueN = counts.reduce((x, y) => x + y, 0), edge = new Array(cent.length).fill(0);
+    for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) { const i = y * W + x, l = labels[i]; if (l < 0) continue;
+      if (labels[i - 1] !== l || labels[i + 1] !== l || labels[i - W] !== l || labels[i + W] !== l) edge[l]++; }
+    // a cluster that is tiny, or small and made almost entirely of shape edges, is anti-aliasing rather than a real color
+    const tiny = counts.map((n, c) => n < opaqueN * 0.004 || (n < opaqueN * 0.04 && edge[c] > n * 0.6));
+    if (tiny.some(Boolean) && tiny.some(t => !t)) {
+      for (let i = 0; i < total; i++) { const l = labels[i]; if (l < 0 || !tiny[l]) continue;
+        const o = i * 4, p = [RGBA[o], RGBA[o + 1], RGBA[o + 2]]; let bi = -1, bd = Infinity;
+        for (let c = 0; c < cent.length; c++) { if (tiny[c]) continue; const d = dist2(p, cent[c]); if (d < bd) { bd = d; bi = c; } }
+        counts[l]--; counts[bi]++; labels[i] = bi; }
     }
     bgIndex = -1;
     if (removeBg) { // the cluster dominating the border becomes background
@@ -426,7 +445,7 @@ const SKE = (() => {
     for (let i = 0; i < total; i++) labels[i] = labels[i] >= 0 ? remap[labels[i]] : -1;
     palette = keep.map(i => cent[i].map(Math.round));
     const areas = new Array(palette.length).fill(0); for (let i = 0; i < total; i++) if (labels[i] >= 0) areas[labels[i]]++;
-    return { palette, areas };
+    return { palette, areas, bg: bgIndex >= 0 ? cent[bgIndex].map(Math.round) : null };
   }
 
   function smooth() { // 3x3 majority filter removes anti-aliased halos
@@ -1005,10 +1024,12 @@ async function intakeImage(img, name, state) {
   const st = $('#upload-status');
   progress(st, 'Reading your image…', 20);
   let w = img.naturalWidth || 1000, hgt = img.naturalHeight || 1000;
-  const big = Math.max(w, hgt) > 1000, scale = 1000 / Math.max(w, hgt);
+  const big = Math.max(w, hgt) > 1000, isSvg = /svg/i.test(img.src.slice(0, 40)) || !img.naturalWidth;
+  // Never blur-upscale raster art (it invents in-between colors). Small images grow with hard pixel edges.
+  const scale = big || isSvg ? 1000 / Math.max(w, hgt) : Math.max(1, Math.floor(600 / Math.max(w, hgt)));
   w = Math.max(1, Math.round(w * scale)); hgt = Math.max(1, Math.round(hgt * scale));
   const c = document.createElement('canvas'); c.width = w; c.height = hgt;
-  const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0, w, hgt);
+  const g = c.getContext('2d', { willReadFrequently: true }); g.imageSmoothingEnabled = big || isSvg; g.drawImage(img, 0, 0, w, hgt);
   S.src = c.toDataURL('image/png');
   S.name = (name || 'design').replace(/\.[^.]+$/, '');
   const data = g.getImageData(0, 0, w, hgt).data;
@@ -1016,7 +1037,11 @@ async function intakeImage(img, name, state) {
   S.info = await call('load', { w, h: hgt, data });
   hist.stack = []; hist.i = -1; S.open = -1; S.merges = [];
   if (state) Object.assign(S, state);
-  else { S.k = Math.max(1, Math.min(12, S.info.suggested)); S.removeBg = !!S.info.solidBg && !S.info.transparent; S.widthMM = null; }
+  else {
+    // Only leave out light (paper-white) backgrounds automatically. Colored backgrounds are usually part of the design.
+    S.removeBg = !!S.info.solidBg && !S.info.transparent && lum(S.info.solidBg) > 0.75;
+    S.k = Math.max(1, Math.min(12, S.info.estimatedColors - (S.removeBg ? 1 : 0))); S.widthMM = null;
+  }
   progress(st, 'Planning stitches…', 85);
   $('#bg-wrap').hidden = !S.info.solidBg || S.info.transparent;
   const pw = $('#photo-warn'); pw.replaceChildren();
@@ -1031,7 +1056,9 @@ async function intakeImage(img, name, state) {
 async function requant_(resetColors = true) {
   showBusy(true);
   const r = await call('quant', { k: S.k, removeBg: S.removeBg, merges: S.merges });
-  S.palette = r.palette; S.areas = r.areas; S.aspect = r.aspect;
+  S.palette = r.palette; S.areas = r.areas; S.aspect = r.aspect; S.bgColor = r.bg;
+  if (!S.merges.length && S.palette.length < S.k) { S.k = Math.max(1, S.palette.length); S.limitNote = `Your image has ${S.palette.length} distinct ${S.palette.length === 1 ? 'color' : 'colors'}${S.removeBg ? ' besides the background' : ''}, so that's the most it can use.`; }
+  else S.limitNote = '';
   const p = r.preview; S.preview = document.createElement('canvas'); S.preview.width = p.w; S.preview.height = p.h;
   S.preview.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(p.data), p.w, p.h), 0, 0);
   if (resetColors || S.colors.length !== S.palette.length) {
@@ -1064,7 +1091,13 @@ function fitToHoop(plan = true) {
 /* ---------- controls ---------- */
 function syncControls() {
   $('#count').value = S.k; $('#count-out').textContent = S.palette.length && S.palette.length !== S.k ? S.palette.length + ' (after merging)' : S.k;
-  $('#bg').checked = S.removeBg; $('#preset').value = S.preset; $('#preset-note').textContent = PRESETS[S.preset].note;
+  $('#bg').checked = S.removeBg;
+  $('#count-note').textContent = S.limitNote || '';
+  if (S.info && S.info.solidBg && !S.info.transparent) {
+    const bgc = S.bgColor || S.info.solidBg; $('#bg-dot').style.background = hex(bgc);
+    $('#bg-note').textContent = S.removeBg ? `The background (${hex(bgc)}) won't be stitched. Your fabric shows through instead.` : `The background (${hex(bgc)}) is stitched as one of the thread colors.`;
+  }
+  $('#preset').value = S.preset; $('#preset-note').textContent = PRESETS[S.preset].note;
   if (S.widthMM) { $('#width').value = S.widthMM; const [hw, hh] = hoopMM(); const hmm = S.widthMM * S.aspect;
     $('#size-note').textContent = `Height ${hmm.toFixed(1)} mm. Hoop ${hw} × ${hh} mm.` + (S.widthMM > hw || hmm > hh ? ' Too big for this hoop.' : ''); }
   $('#hoop').value = S.hoop; $('#hoop2').value = S.hoop;
@@ -1277,8 +1310,8 @@ const hoopChange = v => { S.hoop = v; store.set('hoop', v); if (S.palette.length
 $('#hoop').addEventListener('change', e => hoopChange(e.target.value));
 $('#hoop2').addEventListener('change', e => hoopChange(e.target.value));
 $('#count').addEventListener('input', e => { $('#count-out').textContent = e.target.value; });
-$('#count').addEventListener('change', async e => { S.k = +e.target.value; S.merges = []; S.open = -1; await requant_(true); pushHist(); announce(`${S.palette.length} thread colors`); });
-$('#bg').addEventListener('change', async e => { S.removeBg = e.target.checked; S.merges = []; await requant_(true); pushHist(); });
+$('#count').addEventListener('change', async e => { S.k = +e.target.value; S.merges = []; S.open = -1; await requant_(true); pushHist(); announce(`${S.palette.length} thread colors. ${S.limitNote || ''}`); });
+$('#bg').addEventListener('change', async e => { S.removeBg = e.target.checked; S.k = Math.max(1, S.k + (S.removeBg ? -1 : 1)); S.merges = []; await requant_(true); pushHist(); announce(S.removeBg ? 'Background left out' : 'Background added as a thread color'); });
 $('#preset').addEventListener('change', e => { S.preset = e.target.value; store.set('preset', S.preset); const p = PRESETS[S.preset];
   S.colors.forEach(c => Object.assign(c, { density: p.density, stitchLen: p.stitchLen, pull: p.pull, underlay: p.underlay })); syncControls(); renderThreads(); pushHist(); schedulePlan(); });
 $('#width').addEventListener('change', e => { const v = Math.max(10, Math.min(400, +e.target.value || S.widthMM)); S.widthMM = v; syncControls(); pushHist(); schedulePlan(); });
