@@ -1,0 +1,1330 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StitchKit: turn artwork into a Brother .PES embroidery file</title>
+<meta name="description" content="Free, private, in-browser converter from flat-color artwork to Brother .PES and .DST machine embroidery files. Your artwork never leaves your device.">
+<link rel="canonical" href="https://jerlyn.github.io/stitchkit/">
+<meta property="og:title" content="StitchKit: artwork to embroidery file, in your browser">
+<meta property="og:description" content="Turn flat-color art into a Brother .PES file for free. Nothing is uploaded.">
+<meta property="og:url" content="https://jerlyn.github.io/stitchkit/">
+<meta name="theme-color" content="#020C28">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="StitchKit">
+<style>
+:root{--primary:#36069A;--pink:#DE6399;--ink:#020C28;--teal:#4ADEDE;--white:#FFFFFF;--bg:#F8F9FA;--text:#212529;--muted:#495057;--line:#ADB5BD;--warn:#9A3412;--err:#B42318;--ok:#067647;--radius:12px}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px;line-height:1.5;color:var(--text);background:var(--bg)}
+a{color:var(--primary)}a:hover{color:var(--ink)}
+:focus-visible{outline:3px solid var(--primary);outline-offset:2px}
+.on-dark :focus-visible{outline-color:var(--teal)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.skip{position:absolute;left:8px;top:-60px;background:var(--white);color:var(--primary);padding:10px 16px;border-radius:8px;z-index:10;font-weight:700}
+.skip:focus{top:8px}
+header.site{background:var(--ink);color:var(--white);padding:12px 24px;display:flex;flex-wrap:wrap;gap:8px 24px;align-items:center;justify-content:space-between}
+.brand{display:flex;gap:10px;align-items:center;font-weight:700;font-size:20px;color:var(--white);text-decoration:none}
+.privacy{margin:0;font-size:14px;display:flex;gap:8px;align-items:center}
+nav.steps{background:var(--white);border-bottom:1px solid var(--line)}
+nav.steps ol{list-style:none;margin:0 auto;padding:10px 24px;max-width:1240px;display:flex;flex-wrap:wrap;gap:4px 28px;font-size:15px}
+nav.steps li{color:var(--muted)}
+nav.steps li[aria-current="step"]{color:var(--primary);font-weight:700;text-decoration:underline;text-underline-offset:4px}
+nav.steps li.done{color:var(--text)}
+main{max-width:1240px;margin:0 auto;padding:28px 24px 48px}
+h1{font-size:30px;line-height:1.2;margin:0 0 8px}
+h2{font-size:19px;margin:0 0 10px}
+h3{font-size:16px;margin:0 0 8px}
+p{margin:0 0 10px}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+.row{display:flex;flex-wrap:wrap;gap:24px}
+.grow{flex:999 1 520px;min-width:0}
+.side{flex:1 1 400px;min-width:0;max-width:100%}
+.card{background:var(--white);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+.stack>*+*{margin-top:16px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;border-radius:8px;border:1px solid var(--text);background:var(--white);color:var(--text);font:600 15px/1.2 inherit;cursor:pointer;text-decoration:none}
+.btn:hover{background:var(--bg)}
+.btn.primary{background:var(--primary);border-color:var(--primary);color:var(--white)}
+.btn.primary:hover{background:#2A0578}
+.btn.link{border:0;background:transparent;color:var(--primary);text-decoration:underline;padding:0 8px}
+.btn.icon{min-width:44px;padding:0 10px}
+.btn[disabled]{opacity:.55;cursor:not-allowed}
+.btn.big{min-height:52px;font-size:17px;width:100%}
+.drop{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;border:2px dashed var(--primary);border-radius:16px;background:var(--white);padding:44px 20px;cursor:pointer}
+.drop.over{background:#EFE9FB}
+.drop:focus-within{outline:3px solid var(--primary);outline-offset:3px}
+.drop strong{font-size:18px}
+.drop u{color:var(--primary)}
+label.field,.field>label{display:block;font-weight:600;font-size:14px;margin-bottom:4px}
+select,input[type=text],input[type=number]{min-height:44px;width:100%;border-radius:8px;border:1px solid var(--muted);padding:0 12px;font:15px inherit;background:var(--white);color:var(--text)}
+input[type=range]{width:100%;accent-color:var(--primary);min-height:28px}
+input[type=checkbox],input[type=radio]{width:20px;height:20px;accent-color:var(--primary);flex:none}
+.check{display:flex;gap:10px;align-items:center;min-height:44px;font-size:15px}
+.alert{display:flex;gap:12px;align-items:flex-start;background:var(--white);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+.alert svg{flex:none;margin-top:2px}
+.alert .actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.progress{height:10px;background:var(--bg);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.progress>span{display:block;height:100%;width:0;background:var(--primary);transition:width .2s}
+.examples{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;height:100px;align-items:center;justify-items:center;background:var(--bg);border-radius:8px;margin-bottom:10px}
+.toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.seg{display:inline-flex;border:1px solid var(--muted);border-radius:8px;overflow:hidden}
+.seg button{min-height:44px;padding:0 14px;border:0;background:var(--white);color:var(--text);font:500 14px inherit;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--primary);color:var(--white);font-weight:700}
+fieldset{border:0;margin:0;padding:0;min-width:0}
+.swatches{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.swatches legend{float:left;margin-right:6px;font-size:14px;font-weight:600}
+.swatch{position:relative;width:44px;height:44px}
+.swatch input{position:absolute;inset:0;opacity:0;margin:0;width:44px;height:44px;cursor:pointer}
+.swatch span{display:block;width:44px;height:44px;border-radius:50%;border:1px solid var(--muted)}
+.swatch input:checked+span{box-shadow:0 0 0 3px var(--white),0 0 0 6px var(--primary)}
+.swatch input:focus-visible+span{outline:3px solid var(--primary);outline-offset:6px}
+.stage{position:relative;border-radius:var(--radius);overflow:hidden;background:#2B3A55;aspect-ratio:1/1;max-height:640px;width:100%}
+.stage canvas{display:block;width:100%;height:100%}
+.stage .over{position:absolute;inset:auto 12px 12px auto;display:flex;gap:8px}
+.busy{position:absolute;left:12px;top:12px;background:var(--white);color:var(--text);border-radius:8px;padding:6px 10px;font-size:14px;font-weight:600}
+dl.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:14px 0 0}
+dl.stats div{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+dl.stats dt{font-size:13px;color:var(--muted)}dl.stats dd{margin:2px 0 0;font-weight:700}
+ol.threads{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+ol.threads>li{border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+ol.threads>li.open{border:2px solid var(--primary)}
+.thead{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px}
+.tbtns{display:flex;gap:6px;margin-left:auto}
+.dot{width:28px;height:28px;border-radius:50%;flex:none;border:1px solid var(--muted)}
+.tname{flex:1 1 150px;min-width:0}
+.tname b{display:block}
+.tname span{font-size:13px;color:var(--muted)}
+.skipped .tname b{text-decoration:line-through}
+.tbody{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-top:12px;font-size:14px}
+.tbody .full{grid-column:1/-1}
+.tbody label{font-weight:600}
+.colorrow{display:flex;gap:8px;align-items:center}
+.colorrow input[type=color]{width:52px;height:44px;border:1px solid var(--muted);border-radius:8px;background:var(--white);padding:2px}
+.note{font-size:13px;font-weight:600;color:var(--warn);margin:6px 0 0}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:middle}
+thead th{border-bottom:2px solid var(--text)}
+.chk{list-style:none;margin:0;padding:0}
+.chk li{display:flex;gap:10px;align-items:flex-start;padding:6px 0}
+.chk svg{flex:none;margin-top:2px}
+footer.site{background:var(--white);border-top:1px solid var(--line);padding:14px 24px;display:flex;flex-wrap:wrap;gap:8px 24px;align-items:center;justify-content:space-between;font-size:14px}
+footer.site nav{display:flex;flex-wrap:wrap;gap:0 18px}
+footer.site nav a,footer.site nav button{min-height:44px;display:inline-flex;align-items:center}
+dialog{max-width:560px;border:1px solid var(--line);border-radius:var(--radius);padding:24px;color:var(--text)}
+dialog::backdrop{background:rgba(2,12,40,.6)}
+[hidden]{display:none!important}
+.update{position:fixed;left:16px;right:16px;bottom:16px;margin:0 auto;max-width:560px;z-index:20;background:var(--ink);color:var(--white);border-radius:var(--radius);padding:14px 16px;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between;box-shadow:0 8px 24px rgba(2,12,40,.3)}
+.update p{margin:0;font-weight:600}
+.update .btn{border-color:var(--white)}
+.update .btn.primary{background:var(--teal);border-color:var(--teal);color:var(--ink)}
+.update .btn.ghost{background:transparent;color:var(--white)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+@media print{header.site,nav.steps,footer.site,.noprint,#view-upload,#view-work{display:none!important}#view-download{display:block!important}.printable{border:0}}
+</style>
+<script data-goatcounter="https://stitchkit.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+<header class="site on-dark">
+  <a class="brand" href="./" aria-label="StitchKit home">
+    <svg aria-hidden="true" width="30" height="30" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#4ADEDE" stroke-width="2"/><path d="M7 13.2C8.6 9 10.4 9 12 12s3.4 3 5-1.2" stroke="#DE6399" stroke-width="2" stroke-linecap="round" stroke-dasharray="1.8 1.6"/></svg>
+    StitchKit
+  </a>
+  <p class="privacy"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ADEDE" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Runs on your device. Your artwork is never uploaded.</p>
+</header>
+<nav class="steps" aria-label="Progress">
+  <ol>
+    <li id="st-1" aria-current="step">1 Upload</li>
+    <li id="st-2">2 Adjust threads</li>
+    <li id="st-3">3 Download</li>
+  </ol>
+</nav>
+<div id="live" class="sr-only" aria-live="polite"></div>
+<div class="update on-dark" id="update" role="status" hidden>
+  <p>A new version of StitchKit is available.</p>
+  <div style="display:flex;gap:8px"><button class="btn primary" type="button" id="update-go">Reload</button><button class="btn ghost" type="button" id="update-later">Later</button></div>
+</div>
+
+<main id="main" tabindex="-1">
+
+<!-- STEP 1 -->
+<section id="view-upload" aria-labelledby="h-upload">
+  <div class="row">
+    <div class="grow stack">
+      <div>
+        <h1 id="h-upload" tabindex="-1">Turn your artwork into an embroidery file</h1>
+        <p class="muted">Upload flat-color art. You get a .PES file for Brother machines like the SE600 and SE700, sized to your hoop.</p>
+      </div>
+      <label class="drop" id="drop" for="file">
+        <svg aria-hidden="true" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#36069A" stroke-width="1.5"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+        <strong>Drop an image here or <u>browse</u></strong>
+        <span class="small muted">PNG, JPG, WebP, GIF or SVG, up to 20 MB. You can also paste an image with Ctrl+V (Cmd+V on Mac). Saved StitchKit projects (.json) open here too.</span>
+        <input id="file" class="sr-only" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,.json,application/json">
+      </label>
+      <div class="row" style="gap:12px;align-items:center">
+        <button class="btn" id="sample" type="button">Try a sample design</button>
+        <button class="btn link" id="how" type="button">How does this work?</button>
+      </div>
+      <div id="upload-status" aria-live="polite"></div>
+    </div>
+    <aside class="side stack" aria-label="Tips and machine setup">
+      <div class="card">
+        <label class="field" for="hoop">My machine's hoop</label>
+        <select id="hoop">
+          <option value="100x100">4 × 4 in (100 × 100 mm) · SE600, SE700, PE535</option>
+          <option value="130x180">5 × 7 in (130 × 180 mm)</option>
+          <option value="160x260">6 × 10 in (160 × 260 mm)</option>
+        </select>
+        <p class="small muted" style="margin-top:8px">Remembered on this device for next time.</p>
+      </div>
+      <div class="card">
+        <h2>Works best with</h2>
+        <div class="examples" aria-hidden="true"><span style="width:40px;height:40px;border-radius:50%;background:#36069A"></span><span style="width:40px;height:40px;background:#DE6399"></span><span style="width:40px;height:40px;border-radius:8px;background:#4ADEDE"></span></div>
+        <p><strong>Yes:</strong> logos, icons and flat illustrations with clear shapes and 2 to 8 colors.</p>
+        <p class="muted small" style="margin:0"><strong>Harder:</strong> photos, gradients and tiny text. They still convert, but expect a simplified result.</p>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- STEP 2 -->
+<section id="view-work" aria-labelledby="h-work" hidden>
+  <h1 id="h-work" tabindex="-1" class="sr-only">Adjust threads</h1>
+  <div class="row">
+    <div class="grow">
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="Preview mode">
+          <button type="button" id="pv-orig" aria-pressed="false">Original</button>
+          <button type="button" id="pv-stitch" aria-pressed="true">Stitches</button>
+        </div>
+        <fieldset class="swatches" id="fabric">
+          <legend>Fabric</legend>
+          <label class="swatch"><input type="radio" name="fabric" value="#FFFFFF"><span style="background:#FFFFFF"></span><span class="sr-only">White</span></label>
+          <label class="swatch"><input type="radio" name="fabric" value="#2B3A55" checked><span style="background:#2B3A55"></span><span class="sr-only">Denim</span></label>
+          <label class="swatch"><input type="radio" name="fabric" value="#212529"><span style="background:#212529"></span><span class="sr-only">Black</span></label>
+          <label class="swatch"><input type="radio" name="fabric" value="#E9DCC9"><span style="background:#E9DCC9"></span><span class="sr-only">Natural canvas</span></label>
+          <label class="swatch" title="Custom fabric color"><input type="color" id="fabric-custom" value="#7A1F3D" aria-label="Custom fabric color"><span style="background:conic-gradient(#DE6399,#4ADEDE,#36069A,#DE6399)"></span></label>
+        </fieldset>
+      </div>
+      <div class="stage" id="stage">
+        <canvas id="cv" role="img" aria-label="Stitch preview"></canvas>
+        <div class="busy" id="busy" hidden>Updating stitches…</div>
+        <div class="over">
+          <button class="btn" type="button" id="play">Play stitch-out</button>
+        </div>
+      </div>
+      <dl class="stats" id="stats"></dl>
+    </div>
+    <aside class="side" aria-labelledby="h-threads">
+      <div class="card stack">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <h2 id="h-threads" style="margin:0">Threads</h2>
+          <div style="display:flex;gap:6px">
+            <button class="btn icon" type="button" id="undo" disabled>Undo</button>
+            <button class="btn icon" type="button" id="redo" disabled>Redo</button>
+          </div>
+        </div>
+        <div id="photo-warn"></div>
+        <div>
+          <label class="field" for="count">Number of colors: <output id="count-out" for="count">3</output></label>
+          <input type="range" id="count" min="1" max="12" value="3">
+        </div>
+        <label class="check" id="bg-wrap" hidden><input type="checkbox" id="bg"> Remove background color</label>
+        <div>
+          <label class="field" for="preset">Fabric preset</label>
+          <select id="preset">
+            <option value="woven">Denim or woven (recommended)</option>
+            <option value="knit">Knit or stretch (T-shirts)</option>
+            <option value="towel">Towel or terry</option>
+            <option value="light">Light cotton</option>
+          </select>
+          <p class="small muted" style="margin:6px 0 0" id="preset-note">Sets density, underlay and pull compensation for every color.</p>
+        </div>
+        <div>
+          <label class="field" for="hoop2">Hoop</label>
+          <select id="hoop2">
+            <option value="100x100">4 × 4 in (100 × 100 mm)</option>
+            <option value="130x180">5 × 7 in (130 × 180 mm)</option>
+            <option value="160x260">6 × 10 in (160 × 260 mm)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="width">Design width (mm)</label>
+          <div style="display:flex;gap:8px"><input type="number" id="width" min="10" max="400" step="0.5" inputmode="decimal"><button class="btn" type="button" id="fit" style="white-space:nowrap">Fit to hoop</button></div>
+          <p class="small muted" style="margin:6px 0 0" id="size-note"></p>
+        </div>
+        <div>
+          <h3>Stitch order</h3>
+          <p class="small muted">The first color stitches first. Use the arrows to reorder.</p>
+          <ol class="threads" id="threads"></ol>
+        </div>
+        <button class="btn primary big" type="button" id="to-download">Continue to download</button>
+        <button class="btn link" type="button" id="back-upload">Start over with a new image</button>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<!-- STEP 3 -->
+<section id="view-download" aria-labelledby="h-download" hidden>
+  <div id="success" class="noprint"></div>
+  <h1 id="h-download" tabindex="-1">Ready to stitch?</h1>
+  <div class="row">
+    <div class="grow stack">
+      <section class="card" aria-labelledby="h-pre">
+        <h2 id="h-pre">Pre-flight check</h2>
+        <ul class="chk" id="preflight"></ul>
+      </section>
+      <section class="card printable" aria-labelledby="h-sheet">
+        <h2 id="h-sheet">Thread sheet</h2>
+        <div style="overflow-x:auto"><table><caption class="sr-only">Thread colors in stitch order</caption>
+          <thead><tr><th scope="col">Order</th><th scope="col">Color</th><th scope="col">Nearest Brother machine color</th><th scope="col">Hex</th><th scope="col">Stitches</th></tr></thead>
+          <tbody id="sheet"></tbody></table></div>
+        <p class="small muted" style="margin:10px 0 0">Your machine shows the nearest color from its built-in list. Thread whatever matches your art and go by this order.</p>
+      </section>
+    </div>
+    <aside class="side stack noprint">
+      <section class="card stack" aria-labelledby="h-dl" style="border:2px solid var(--primary)">
+        <h2 id="h-dl" style="margin:0">Download</h2>
+        <div>
+          <label class="field" for="fname">File name</label>
+          <input type="text" id="fname" autocomplete="off" spellcheck="false" aria-describedby="fname-help">
+          <p class="small muted" id="fname-help" style="margin:6px 0 0">Letters, numbers and dashes. Machines show the first 8 characters.</p>
+        </div>
+        <fieldset>
+          <legend class="field" style="font-weight:600;font-size:14px;margin-bottom:4px">Format</legend>
+          <label class="check"><input type="radio" name="fmt" value="pes" checked> .PES (Brother, Baby Lock)</label>
+          <label class="check"><input type="radio" name="fmt" value="dst"> .DST (most other machines)</label>
+        </fieldset>
+        <button class="btn primary big" type="button" id="download">Download .PES</button>
+        <button class="btn" type="button" id="print-sheet">Print thread sheet</button>
+        <button class="btn" type="button" id="save-project">Save project to edit later</button>
+        <button class="btn link" type="button" id="back-work">Back to threads</button>
+      </section>
+      <section class="card" aria-labelledby="h-load">
+        <h2 id="h-load">Loading it on your machine</h2>
+        <ol class="small" style="margin:0;padding-left:20px">
+          <li>Copy the file to a USB stick (top level, not inside a folder).</li>
+          <li>Plug it into the machine and choose the USB icon.</li>
+          <li>Pick the design and thread colors in the order shown.</li>
+          <li>Clip connecting threads between shapes after each color.</li>
+        </ol>
+      </section>
+    </aside>
+  </div>
+</section>
+</main>
+
+<footer class="site">
+  <p style="margin:0">Made by <a href="https://www.designlady.com" style="font-weight:700">Design Lady</a> · accessibility-first experience design</p>
+  <nav aria-label="Footer">
+    <button class="btn link" type="button" id="privacy-open">Privacy</button>
+    <a href="https://github.com/Jerlyn/stitchkit">Source on GitHub</a>
+    <a href="https://github.com/Jerlyn/stitchkit/issues">Report a problem</a>
+  </nav>
+</footer>
+
+<dialog id="privacy" aria-labelledby="privacy-h">
+  <h2 id="privacy-h">Privacy</h2>
+  <p>StitchKit converts your artwork entirely inside your browser. Your images and embroidery files are never uploaded to any server.</p>
+  <p>We count page visits and downloads with GoatCounter. It uses no cookies and collects no personal information. File names and images are never included.</p>
+  <p>Hoop size and recent settings are saved only on this device. If you install StitchKit as an app, a copy of the app itself is stored on your device so it works offline.</p>
+  <form method="dialog"><button class="btn primary">Close</button></form>
+</dialog>
+<dialog id="howto" aria-labelledby="howto-h">
+  <h2 id="howto-h">How StitchKit works</h2>
+  <ol>
+    <li>It reduces your art to a few thread colors.</li>
+    <li>It traces each color's shapes and fills them with rows of stitches (a tatami fill), with an underlay so the fabric doesn't pucker.</li>
+    <li>It writes a .PES file your machine can read from a USB stick.</li>
+  </ol>
+  <p class="muted">Everything happens on your device. Fine details under about 1.5 mm may stitch slightly rounded.</p>
+  <form method="dialog"><button class="btn primary">Got it</button></form>
+</dialog>
+
+<script id="sk-engine">
+/* StitchKit engine: color reduction, region cleanup, tatami fill, stitch planning.
+   Runs inside a Web Worker (or Node for tests). Coordinates in mm until export. */
+const SKE = (() => {
+  let W = 0, H = 0, RGBA = null;          // working image
+  let labels = null, palette = [];        // quantized
+  let comp = null, comps = [];            // connected components
+  let bgIndex = -1;
+
+  const dist2 = (a, b) => (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2;
+  function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+
+  function load(w, h, data) {
+    W = w; H = h; RGBA = data;
+    // estimate distinct flat colors and background
+    let transparent = 0; const hist = new Map();
+    for (let i = 0; i < W * H; i++) {
+      const o = i * 4;
+      if (RGBA[o + 3] < 128) { transparent++; continue; }
+      const key = ((RGBA[o] >> 3) << 10) | ((RGBA[o + 1] >> 3) << 5) | (RGBA[o + 2] >> 3);
+      hist.set(key, (hist.get(key) || 0) + 1);
+    }
+    const opaque = W * H - transparent;
+    const major = [...hist.entries()].filter(e => e[1] > opaque * 0.004).sort((a, b) => b[1] - a[1])
+      .map(e => [((e[0] >> 10) & 31) * 8 + 4, ((e[0] >> 5) & 31) * 8 + 4, (e[0] & 31) * 8 + 4]);
+    const merged = [];
+    for (const c of major) if (!merged.some(m => dist2(m, c) < 40 * 40)) merged.push(c);
+    // border color for solid backgrounds
+    const border = new Map(); let bn = 0;
+    const addB = (x, y) => { const o = (y * W + x) * 4; if (RGBA[o + 3] < 128) return; bn++; const k = ((RGBA[o] >> 4) << 8) | ((RGBA[o + 1] >> 4) << 4) | (RGBA[o + 2] >> 4); border.set(k, (border.get(k) || 0) + 1); };
+    for (let x = 0; x < W; x++) { addB(x, 0); addB(x, H - 1); }
+    for (let y = 0; y < H; y++) { addB(0, y); addB(W - 1, y); }
+    let solidBg = null;
+    if (bn > (W + H)) {
+      const top = [...border.entries()].sort((a, b) => b[1] - a[1])[0];
+      if (top && top[1] > bn * 0.6) solidBg = [((top[0] >> 8) & 15) * 16 + 8, ((top[0] >> 4) & 15) * 16 + 8, (top[0] & 15) * 16 + 8];
+    }
+    const distinct = hist.size;
+    const photo = merged.length > 10 || (distinct > 3000 && major.length < distinct * 0.01 && merged.length > 8);
+    let suggested = Math.max(1, Math.min(8, merged.length - (solidBg ? 1 : 0)));
+    return { transparent: transparent > W * H * 0.02, solidBg, suggested, photoLike: photo, estimatedColors: merged.length };
+  }
+
+  function quantize(k, removeBg, seed = 7) {
+    const rand = rng(seed); const pts = [];
+    const total = W * H, step = Math.max(1, Math.floor(total / 30000));
+    for (let i = 0; i < total; i += step) { const o = i * 4; if (RGBA[o + 3] >= 128) pts.push([RGBA[o], RGBA[o + 1], RGBA[o + 2]]); }
+    const K = Math.min(k + (removeBg ? 1 : 0), 16);
+    // k-means++ init
+    const cent = [pts[Math.floor(rand() * pts.length)].slice()];
+    while (cent.length < K) {
+      const d = pts.map(p => Math.min(...cent.map(c => dist2(p, c)))); const sum = d.reduce((a, b) => a + b, 0);
+      if (sum === 0) break; let r = rand() * sum, j = 0; while ((r -= d[j]) > 0) j++; cent.push(pts[j].slice());
+    }
+    for (let it = 0; it < 15; it++) {
+      const acc = cent.map(() => [0, 0, 0, 0]);
+      for (const p of pts) { let bi = 0, bd = Infinity; for (let c = 0; c < cent.length; c++) { const d = dist2(p, cent[c]); if (d < bd) { bd = d; bi = c; } } const a = acc[bi]; a[0] += p[0]; a[1] += p[1]; a[2] += p[2]; a[3]++; }
+      cent.forEach((c, i) => { const a = acc[i]; if (a[3]) { c[0] = a[0] / a[3]; c[1] = a[1] / a[3]; c[2] = a[2] / a[3]; } });
+    }
+    labels = new Int16Array(total);
+    const counts = new Array(cent.length).fill(0);
+    for (let i = 0; i < total; i++) {
+      const o = i * 4; if (RGBA[o + 3] < 128) { labels[i] = -1; continue; }
+      const p = [RGBA[o], RGBA[o + 1], RGBA[o + 2]]; let bi = 0, bd = Infinity;
+      for (let c = 0; c < cent.length; c++) { const d = dist2(p, cent[c]); if (d < bd) { bd = d; bi = c; } }
+      labels[i] = bi; counts[bi]++;
+    }
+    bgIndex = -1;
+    if (removeBg) { // the cluster dominating the border becomes background
+      const bc = new Array(cent.length).fill(0);
+      const add = i => { if (labels[i] >= 0) bc[labels[i]]++; };
+      for (let x = 0; x < W; x++) { add(x); add((H - 1) * W + x); } for (let y = 0; y < H; y++) { add(y * W); add(y * W + W - 1); }
+      const m = bc.indexOf(Math.max(...bc)); if (bc[m] > 0) bgIndex = m;
+    }
+    smooth();
+    // drop empty / background clusters and relabel by size
+    const keep = cent.map((c, i) => i).filter(i => i !== bgIndex && counts[i] > 0);
+    const remap = new Int16Array(cent.length).fill(-1); keep.forEach((o, n) => remap[o] = n);
+    for (let i = 0; i < total; i++) labels[i] = labels[i] >= 0 ? remap[labels[i]] : -1;
+    palette = keep.map(i => cent[i].map(Math.round));
+    const areas = new Array(palette.length).fill(0); for (let i = 0; i < total; i++) if (labels[i] >= 0) areas[labels[i]]++;
+    return { palette, areas };
+  }
+
+  function smooth() { // 3x3 majority filter removes anti-aliased halos
+    const out = new Int16Array(labels.length);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const cnt = new Map(); let best = labels[y * W + x], bc = 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const yy = y + dy, xx = x + dx; if (yy < 0 || yy >= H || xx < 0 || xx >= W) continue;
+        const l = labels[yy * W + xx]; const c = (cnt.get(l) || 0) + 1; cnt.set(l, c); if (c > bc) { bc = c; best = l; }
+      }
+      out[y * W + x] = bc >= 5 ? best : labels[y * W + x];
+    }
+    labels = out;
+  }
+
+  function merge(a, b) { // merge color a into color b
+    for (let i = 0; i < labels.length; i++) { let l = labels[i]; if (l < 0) continue; if (l === a) l = b; if (l > a) l--; labels[i] = l; }
+    palette.splice(a, 1);
+    const areas = new Array(palette.length).fill(0); for (let i = 0; i < labels.length; i++) if (labels[i] >= 0) areas[labels[i]]++;
+    return { palette, areas };
+  }
+
+  function components(minPx) { // 8-connected regions per color; tiny specks absorbed into neighbours
+    comp = new Int32Array(W * H).fill(-1); comps = [];
+    const stack = new Int32Array(W * H);
+    for (let s = 0; s < W * H; s++) {
+      if (labels[s] < 0 || comp[s] >= 0) continue;
+      const id = comps.length, lab = labels[s]; let sp = 0, n = 0, per = 0, sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0;
+      let x0 = W, y0 = H, x1 = 0, y1 = 0; stack[sp++] = s; comp[s] = id;
+      while (sp) {
+        const p = stack[--sp], x = p % W, y = (p / W) | 0; n++; sx += x; sy += y; sxx += x * x; syy += y * y; sxy += x * y;
+        if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          if (!dx && !dy) continue; const xx = x + dx, yy = y + dy;
+          if (xx < 0 || yy < 0 || xx >= W || yy >= H) { if (!dx || !dy) per++; continue; }
+          const q = yy * W + xx;
+          if (labels[q] !== lab) { if (!dx || !dy) per++; continue; }
+          if (comp[q] < 0) { comp[q] = id; stack[sp++] = q; }
+        }
+      }
+      const mx = sx / n, my = sy / n, cxx = sxx / n - mx * mx, cyy = syy / n - my * my, cxy = sxy / n - mx * my;
+      const angle = 0.5 * Math.atan2(2 * cxy, cxx - cyy) * 180 / Math.PI;
+      comps.push({ id, label: lab, n, per, cx: mx, cy: my, angle, box: [x0, y0, x1, y1] });
+    }
+    // absorb specks
+    let changed = false;
+    for (const c of comps) {
+      if (c.n >= minPx) continue;
+      const votes = new Map();
+      for (let y = Math.max(0, c.box[1] - 1); y <= Math.min(H - 1, c.box[3] + 1); y++)
+        for (let x = Math.max(0, c.box[0] - 1); x <= Math.min(W - 1, c.box[2] + 1); x++) {
+          const l = labels[y * W + x]; if (l !== c.label && comp[y * W + x] !== c.id) votes.set(l, (votes.get(l) || 0) + 1);
+        }
+      let best = -1, bv = -1; for (const [l, v] of votes) if (v > bv) { bv = v; best = l; }
+      for (let y = c.box[1]; y <= c.box[3]; y++) for (let x = c.box[0]; x <= c.box[2]; x++) if (comp[y * W + x] === c.id) labels[y * W + x] = best;
+      changed = true;
+    }
+    if (changed) return components(minPx);
+    return comps;
+  }
+
+  function contentBox() {
+    let x0 = W, y0 = H, x1 = -1, y1 = -1;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (labels[y * W + x] >= 0) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    return x1 < 0 ? [0, 0, W - 1, H - 1] : [x0, y0, x1 + 1, y1 + 1];
+  }
+
+  /* Tatami rows across one component. Returns chains of [x,y] points in mm. */
+  function fillComponent(c, mmpx, angleDeg, spacing, stitchLen, ext, inset, stagger) {
+    const a = angleDeg * Math.PI / 180, ca = Math.cos(a), sa = Math.sin(a);
+    const inside = (u, v) => { // u,v in rotated mm frame -> pixel
+      const X = (u * ca - v * sa) / mmpx, Y = (u * sa + v * ca) / mmpx;
+      const xi = Math.floor(X), yi = Math.floor(Y);
+      return xi >= 0 && yi >= 0 && xi < W && yi < H && comp[yi * W + xi] === c.id;
+    };
+    // rotated bounds from pixel box corners
+    const [bx0, by0, bx1, by1] = c.box; let umin = Infinity, umax = -Infinity, vmin = Infinity, vmax = -Infinity;
+    for (const [px, py] of [[bx0, by0], [bx1 + 1, by0], [bx0, by1 + 1], [bx1 + 1, by1 + 1]]) {
+      const x = px * mmpx, y = py * mmpx, u = x * ca + y * sa, v = -x * sa + y * ca;
+      umin = Math.min(umin, u); umax = Math.max(umax, u); vmin = Math.min(vmin, v); vmax = Math.max(vmax, v);
+    }
+    const du = mmpx * 0.35, rows = [];
+    let k = 0;
+    for (let v = vmin + spacing / 2; v < vmax; v += spacing, k++) {
+      const segs = []; let inRun = false, s0 = 0;
+      for (let u = umin; u <= umax + du; u += du) {
+        const ins = u <= umax && inside(u, v);
+        if (ins && !inRun) { inRun = true; s0 = u; } else if (!ins && inRun) { inRun = false; segs.push([s0, u - du]); }
+      }
+      const row = [];
+      for (let [s, e] of segs) { s = s - ext + inset; e = e + ext - inset; if (e - s >= Math.max(0.3, spacing * 0.6)) row.push([s, e, v, k]); }
+      rows.push(row);
+    }
+    const used = rows.map(r => r.map(() => false)), chains = [];
+    for (let ri = 0; ri < rows.length; ri++) for (let si = 0; si < rows[ri].length; si++) {
+      if (used[ri][si]) continue;
+      const ch = []; let r = ri, s = si, lr = true;
+      for (;;) {
+        used[r][s] = true; const [x0, x1, vv, kk] = rows[r][s]; ch.push([x0, x1, vv, kk, lr]); lr = !lr;
+        if (r + 1 >= rows.length) break;
+        const endX = lr ? x0 : x1;
+        let best = -1, bd = Infinity;
+        rows[r + 1].forEach((g, j) => { if (!used[r + 1][j] && g[0] < x1 && g[1] > x0) { const d = Math.abs((lr ? g[0] : g[1]) - endX); if (d < bd) { bd = d; best = j; } } });
+        if (best < 0 || bd > 6) break;
+        s = best; r++;
+      }
+      chains.push(ch);
+    }
+    const out = [];
+    for (const ch of chains) {
+      const pts = [];
+      for (const [x0, x1, vv, kk, lr] of ch) {
+        const a0 = lr ? x0 : x1, b0 = lr ? x1 : x0, len = Math.abs(b0 - a0);
+        const xs = [a0];
+        if (stagger) {
+          const off = (kk % 3) * stitchLen / 3, lo = Math.min(a0, b0), hi = Math.max(a0, b0), inner = [];
+          for (let x = Math.floor(lo / stitchLen) * stitchLen + off; x < hi; x += stitchLen) if (x > lo + 0.5 && x < hi - 0.5) inner.push(x);
+          if (b0 < a0) inner.reverse(); xs.push(...inner);
+        } else { const n = Math.max(1, Math.ceil(len / stitchLen)); for (let i = 1; i < n; i++) xs.push(a0 + (b0 - a0) * i / n); }
+        xs.push(b0);
+        for (const x of xs) pts.push([x * ca - vv * sa, x * sa + vv * ca]);
+      }
+      out.push(pts);
+    }
+    return out;
+  }
+
+  /* settings: { widthMM, colors:[{index, rgb, skip, angle:null|deg, density, stitchLen, underlay, pull}], order:[indices] } */
+  function plan(settings) {
+    const box = contentBox(); const pxW = box[2] - box[0], pxH = box[3] - box[1];
+    const mmpx = settings.widthMM / pxW;
+    const minPx = Math.max(4, Math.round(0.6 / (mmpx * mmpx)));
+    components(minPx);
+    const chainsOut = [], threads = [], meta = [];
+    let cur = null;
+    const st = [];
+    const push = (x, y, c) => st.push([x, y, c]);
+    let trims = 0, longest = 0;
+    const toU = p => [Math.round((p[0] - (box[0] + pxW / 2) * mmpx) * 10), Math.round((p[1] - (box[1] + pxH / 2) * mmpx) * 10)];
+    const tieOff = () => { if (st.length > 1) { const a = st[st.length - 1], b = st[st.length - 2]; if (a[2] === 1 && b[2] === 1) { push(b[0], b[1], 1); push(a[0], a[1], 1); push(b[0], b[1], 1); push(a[0], a[1], 1); } } };
+    const insideMM = (c, x, y) => { const xi = Math.floor(x / mmpx), yi = Math.floor(y / mmpx);
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const X = xi + dx, Y = yi + dy; if (X >= 0 && Y >= 0 && X < W && Y < H && comp[Y * W + X] === c.id) return true; }
+      return false; };
+    const fromU = p => [p[0] / 10 + (box[0] + pxW / 2) * mmpx, p[1] / 10 + (box[1] + pxH / 2) * mmpx];
+    const travelInside = (c, a, b) => { // a,b in units
+      const A = fromU(a), B = fromU(b), d = Math.hypot(B[0] - A[0], B[1] - A[1]); if (d > 8) return false;
+      for (let t = 0.1; t < 1; t += 0.1) if (!insideMM(c, A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t)) return false;
+      return true;
+    };
+    const addChain = (pts, c) => {
+      if (!pts.length) return;
+      const U = pts.map(toU);
+      const p0 = U[0];
+      const gap = cur ? Math.hypot(cur[0] - p0[0], cur[1] - p0[1]) : Infinity;
+      if (!cur || (gap > 20 && !(c && travelInside(c, cur, p0)))) {
+        if (cur) { tieOff(); push(cur[0], cur[1], 3); trims++; }
+        push(p0[0], p0[1], 2);
+        const q = U[1] || p0, L = Math.hypot(q[0] - p0[0], q[1] - p0[1]) || 1;
+        const t = [Math.round(p0[0] + (q[0] - p0[0]) / L * 4), Math.round(p0[1] + (q[1] - p0[1]) / L * 4)];
+        for (const pp of [p0, t, p0, t, p0]) push(pp[0], pp[1], 1);
+      }
+      for (const p of U) {
+        const last = st[st.length - 1]; const d = Math.hypot(p[0] - last[0], p[1] - last[1]);
+        if (d > 35) { const n = Math.ceil(d / 35); for (let i = 1; i < n; i++) push(Math.round(last[0] + (p[0] - last[0]) * i / n), Math.round(last[1] + (p[1] - last[1]) * i / n), 1); }
+        push(p[0], p[1], 1);
+      }
+      cur = U[U.length - 1];
+    };
+    const orderChains = chains => { // nearest-neighbour, chains may run backwards
+      const out = []; const left = chains.filter(ch => ch.length);
+      let pos = cur ? fromU(cur) : null;
+      while (left.length) {
+        let bi = 0, rev = false, bd = Infinity;
+        if (pos) left.forEach((ch, i) => {
+          const a = Math.hypot(ch[0][0] - pos[0], ch[0][1] - pos[1]), b = Math.hypot(ch[ch.length - 1][0] - pos[0], ch[ch.length - 1][1] - pos[1]);
+          if (a < bd) { bd = a; bi = i; rev = false; } if (b < bd) { bd = b; bi = i; rev = true; }
+        });
+        let ch = left.splice(bi, 1)[0]; if (rev) ch = ch.slice().reverse(); out.push(ch); pos = ch[ch.length - 1];
+      }
+      return out;
+    };
+    const order = settings.order.filter(i => !settings.colors[i].skip);
+    order.forEach((ci, n) => {
+      const cs = settings.colors[ci];
+      if (n > 0) { tieOff(); push(cur[0], cur[1], 3); trims++; push(cur[0], cur[1], 4); cur = null; }
+      threads.push(cs.rgb);
+      let list = comps.filter(c => c.label === ci); const ordered = [];
+      let pos = st.length ? [st[st.length - 1][0] / 10, st[st.length - 1][1] / 10] : [0, 0];
+      while (list.length) {
+        let bi = 0, bd = Infinity;
+        list.forEach((c, i) => { const d = Math.hypot(c.cx * mmpx - pos[0], c.cy * mmpx - pos[1]); if (d < bd) { bd = d; bi = i; } });
+        const c = list.splice(bi, 1)[0]; ordered.push(c); pos = [c.cx * mmpx, c.cy * mmpx];
+      }
+      let count0 = st.length;
+      for (const c of ordered) {
+        const ang = cs.angle == null ? c.angle : cs.angle;
+        if (cs.underlay && c.n * mmpx * mmpx > 4) for (const ch of orderChains(fillComponent(c, mmpx, ang + 90, 1.8, 3.0, 0, 0.4, false))) addChain(ch, c);
+        for (const ch of orderChains(fillComponent(c, mmpx, ang, cs.density, cs.stitchLen, cs.pull, 0, true))) addChain(ch, c);
+      }
+      meta.push({ index: ci, stitches: st.length - count0, regions: ordered.length,
+        thin: ordered.filter(c => 2 * c.n / Math.max(1, c.per) * mmpx < 1.5 && c.n * mmpx * mmpx > 0.6).length });
+    });
+    if (cur) { tieOff(); push(cur[0], cur[1], 3); trims++; }
+    push(cur ? cur[0] : 0, cur ? cur[1] : 0, 5);
+    // stats
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, n = 0, prev = null;
+    for (const s of st) {
+      if (s[2] === 1) { n++; if (prev && prev[2] === 1) longest = Math.max(longest, Math.hypot(s[0] - prev[0], s[1] - prev[1])); }
+      if (s[2] <= 2) { x0 = Math.min(x0, s[0]); x1 = Math.max(x1, s[0]); y0 = Math.min(y0, s[1]); y1 = Math.max(y1, s[1]); }
+      prev = s;
+    }
+    return { stitches: st, threads, meta, stats: { count: n, trims, colors: threads.length, widthMM: (x1 - x0) / 10, heightMM: (y1 - y0) / 10, longestMM: longest / 10 } };
+  }
+
+  function labelPreview() { // RGBA of quantized image for the "Original (simplified)" view
+    const out = new Uint8ClampedArray(W * H * 4);
+    for (let i = 0; i < W * H; i++) { const l = labels[i]; if (l < 0) continue; const c = palette[l]; out[i * 4] = c[0]; out[i * 4 + 1] = c[1]; out[i * 4 + 2] = c[2]; out[i * 4 + 3] = 255; }
+    return { w: W, h: H, data: out };
+  }
+
+  return { load, quantize, merge, plan, labelPreview, aspect: () => { const b = contentBox(); return (b[3] - b[1]) / (b[2] - b[0]); } };
+})();
+if (typeof module !== 'undefined') module.exports = SKE;
+
+</script>
+<script>
+/* StitchKit writers: Brother PES (v1 + PEC) and Tajima DST.
+   Faithful port of pyembroidery's PesWriter/PecWriter/DstWriter (MIT).
+   Units: 0.1 mm integers. Commands: S stitch, J jump, T trim, C color change, E end. */
+const SK_CMD = { S: 1, J: 2, T: 3, C: 4, E: 5 };
+
+const PEC_THREADS = [null,
+  [14,31,124,'Prussian Blue'],[10,85,163,'Blue'],[0,135,119,'Teal Green'],[75,107,175,'Cornflower Blue'],[237,23,31,'Red'],
+  [209,92,0,'Reddish Brown'],[145,54,151,'Magenta'],[228,154,203,'Light Lilac'],[145,95,172,'Lilac'],[158,214,125,'Mint Green'],
+  [232,169,0,'Deep Gold'],[254,186,53,'Orange'],[255,255,0,'Yellow'],[112,188,31,'Lime Green'],[186,152,0,'Brass'],
+  [168,168,168,'Silver'],[125,111,0,'Russet Brown'],[255,255,179,'Cream Brown'],[79,85,86,'Pewter'],[0,0,0,'Black'],
+  [11,61,145,'Ultramarine'],[119,1,118,'Royal Purple'],[41,49,51,'Dark Gray'],[42,19,1,'Dark Brown'],[246,74,138,'Deep Rose'],
+  [178,118,36,'Light Brown'],[252,187,197,'Salmon Pink'],[254,55,15,'Vermilion'],[240,240,240,'White'],[106,28,138,'Violet'],
+  [168,221,196,'Seacrest'],[37,132,187,'Sky Blue'],[254,179,67,'Pumpkin'],[255,243,107,'Cream Yellow'],[208,166,96,'Khaki'],
+  [209,84,0,'Clay Brown'],[102,186,73,'Leaf Green'],[19,74,70,'Peacock Blue'],[135,135,135,'Gray'],[216,204,198,'Warm Gray'],
+  [67,86,7,'Dark Olive'],[253,217,222,'Flesh Pink'],[249,147,188,'Pink'],[0,56,34,'Deep Green'],[178,175,212,'Lavender'],
+  [104,106,176,'Wisteria Violet'],[239,227,185,'Beige'],[247,56,102,'Carmine'],[181,75,100,'Amber Red'],[19,43,26,'Olive Green'],
+  [199,1,86,'Dark Fuchsia'],[254,158,50,'Tangerine'],[168,222,235,'Light Blue'],[0,103,62,'Emerald Green'],[78,41,144,'Purple'],
+  [47,126,32,'Moss Green'],[255,204,204,'Flesh Pink'],[255,217,17,'Harvest Gold'],[9,91,166,'Electric Blue'],[240,249,112,'Lemon Yellow'],
+  [227,243,91,'Fresh Green'],[255,153,0,'Orange'],[255,240,141,'Cream Yellow'],[255,200,200,'Applique']];
+
+function skColorDist(r1, g1, b1, r2, g2, b2) {
+  const rm = Math.round((r1 + r2) / 2), r = r1 - r2, g = g1 - g2, b = b1 - b2;
+  return (((512 + rm) * r * r) >> 8) + 4 * g * g + (((767 - rm) * b * b) >> 8);
+}
+function skNearest(rgb, list) {
+  let best = null, bd = Infinity;
+  for (let i = 0; i < list.length; i++) {
+    const t = list[i]; if (!t) continue;
+    const d = skColorDist(rgb[0], rgb[1], rgb[2], t[0], t[1], t[2]);
+    if (d <= bd) { bd = d; best = i; }
+  }
+  return best;
+}
+function skPecName(rgb) { const i = skNearest(rgb, PEC_THREADS); return { index: i, name: PEC_THREADS[i][3] }; }
+
+class SkBuf {
+  constructor() { this.b = new Uint8Array(1 << 16); this.n = 0; }
+  grow(k) { if (this.n + k > this.b.length) { const nb = new Uint8Array(Math.max(this.b.length * 2, this.n + k)); nb.set(this.b); this.b = nb; } }
+  u8(v) { this.grow(1); this.b[this.n++] = v & 255; }
+  bytes(a) { for (const v of a) this.u8(v); }
+  str(s) { for (let i = 0; i < s.length; i++) this.u8(s.charCodeAt(i)); }
+  i16(v) { this.u8(v); this.u8(v >> 8); }
+  i24(v) { this.u8(v); this.u8(v >> 8); this.u8(v >> 16); }
+  i32(v) { this.u8(v); this.u8(v >> 8); this.u8(v >> 16); this.u8(v >> 24); }
+  f32(v) { const dv = new DataView(new ArrayBuffer(4)); dv.setFloat32(0, v, true); for (let i = 0; i < 4; i++) this.u8(dv.getUint8(i)); }
+  put16(at, v) { this.b[at] = v & 255; this.b[at + 1] = (v >> 8) & 255; }
+  put24(at, v) { this.b[at] = v & 255; this.b[at + 1] = (v >> 8) & 255; this.b[at + 2] = (v >> 16) & 255; }
+  put32(at, v) { this.put24(at, v); this.b[at + 3] = (v >> 24) & 255; }
+  out() { return this.b.slice(0, this.n); }
+}
+
+function skBounds(st) {
+  let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity;
+  for (const s of st) { if (s[0] > c) c = s[0]; if (s[0] < a) a = s[0]; if (s[1] > d) d = s[1]; if (s[1] < b) b = s[1]; }
+  return [a, b, c, d];
+}
+function skPyRound(v) { // Python round(): half to even
+  const f = Math.floor(v), r = v - f;
+  if (r > 0.5) return f + 1; if (r < 0.5) return f; return f % 2 === 0 ? f : f + 1;
+}
+
+const PEC_BLANK = [0,0,0,0,0,0,0xf0,0xff,0xff,0xff,0xff,0xf,0x8,0,0,0,0,0x10,0x4,0,0,0,0,0x20]
+  .concat(Array(30).fill([0x2,0,0,0,0,0x40]).flat())
+  .concat([0x4,0,0,0,0,0x20,0x8,0,0,0,0,0x10,0xf0,0xff,0xff,0xff,0xff,0xf,0,0,0,0,0,0]);
+
+function skDrawScaled(ext, pts, g, stride, buffer) {
+  let dw = ext[2] - ext[0], dh = ext[3] - ext[1];
+  const gw = stride * 8, gh = g.length / stride;
+  if (dw === 0) dw = 1; if (dh === 0) dh = 1;
+  const scale = Math.min((gw - buffer) / dw, (gh - buffer) / dh);
+  const cx = (ext[2] + ext[0]) / 2, cy = (ext[3] + ext[1]) / 2;
+  const tx = -cx * scale + gw / 2, ty = -cy * scale + gh / 2;
+  for (const p of pts) {
+    const x = Math.floor(p[0] * scale + tx), y = Math.floor(p[1] * scale + ty);
+    const idx = y * stride + Math.trunc(x / 8);
+    if (idx >= 0 && idx < g.length) g[idx] |= 1 << (((x % 8) + 8) % 8);
+  }
+}
+
+/* stitches: [[x,y,cmd],...] ending with E. threads: [[r,g,b],...] one per color block. */
+function skWritePES(stitches, threads, name) {
+  const f = new SkBuf();
+  const ext = skBounds(stitches);
+  const cx = (ext[2] + ext[0]) / 2, cy = (ext[3] + ext[1]) / 2;
+  const left = ext[0] - cx, top = ext[1] - cy, right = ext[2] - cx, bottom = ext[3] - cy;
+  f.str('#PES0001');
+  const pecPh = f.n; f.i32(0);
+  f.i16(1); f.i16(1); f.i16(1); // header v1: scale to fit, hoop, 1 block object
+  f.i16(0xFFFF); f.i16(0);
+  // blocks
+  const w = right - left, h = bottom - top;
+  f.i16(7); f.str('CEmbOne');
+  for (let i = 0; i < 8; i++) f.i16(0);
+  const tx = 350 + 1300 / 2 - w / 2, ty = 100 + h + 1800 / 2 - h / 2;
+  [1, 0, 0, 1, tx, ty].forEach(v => f.f32(v));
+  f.i16(1); f.i16(0); f.i16(0); f.i16(Math.trunc(w)); f.i16(Math.trunc(h));
+  f.bytes([0, 0, 0, 0, 0, 0, 0, 0]);
+  const secPh = f.n; f.i16(0);
+  f.i16(0xFFFF); f.i16(0);
+  f.i16(7); f.str('CSewSeg');
+  // segments
+  const ax = left + cx, ay = bottom + cy;
+  let ti = 0, code = skNearest(threads[ti++] || [0, 0, 0], PEC_THREADS);
+  let sx = 0, sy = 0, section = 0, prevCode = -1, flag = -1; const log = [];
+  let i = 0;
+  while (i < stitches.length) {
+    const cmd = stitches[i][2]; let j = i; while (j < stitches.length && stitches[j][2] === cmd) j++;
+    const blk = stitches.slice(i, j); i = j;
+    let seg = null, fl;
+    if (cmd === SK_CMD.J) { const l = blk[blk.length - 1]; seg = [[sx - ax, sy - ay], [l[0] - ax, l[1] - ay]]; fl = 1; }
+    else if (cmd === SK_CMD.C) { code = skNearest(threads[ti++] || [0, 0, 0], PEC_THREADS); continue; }
+    else if (cmd === SK_CMD.S) { seg = blk.map(s => { sx = s[0]; sy = s[1]; return [s[0] - ax, s[1] - ay]; }); fl = 0; }
+    else continue;
+    if (flag !== -1) f.i16(0x8003);
+    flag = fl;
+    if (prevCode !== code) { log.push([section, code]); prevCode = code; }
+    f.i16(fl); f.i16(code); f.i16(seg.length);
+    for (const p of seg) { f.i16(Math.trunc(p[0])); f.i16(Math.trunc(p[1])); }
+    section++;
+  }
+  f.i16(log.length); for (const l of log) { f.i16(l[0]); f.i16(l[1]); }
+  f.put16(secPh, section);
+  f.i16(0); f.i16(0);
+  f.put32(pecPh, f.n);
+  skWritePEC(f, stitches, threads, name);
+  return f.out();
+}
+
+function skWritePEC(f, stitches, threads, name) {
+  const ext = skBounds(stitches);
+  const nm = (name || 'Untitled').slice(0, 8);
+  f.str('LA:' + nm.padEnd(16, ' ') + '\r');
+  f.bytes([0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0xFF, 0x00]);
+  f.u8(6); f.u8(38);
+  // unique palette (deterministic: first-appearance order)
+  const pal = PEC_THREADS.slice(), chart = new Array(pal.length).fill(null), seen = [];
+  for (const t of threads) if (!seen.some(s => s[0] === t[0] && s[1] === t[1] && s[2] === t[2])) seen.push(t);
+  for (const t of seen) { const k = skNearest(t, pal); if (k === null) break; pal[k] = null; chart[k] = t; }
+  const idx = threads.map(t => skNearest(t, chart));
+  if (idx.length) { f.bytes(Array(12).fill(0x20)); f.u8(idx.length - 1); f.bytes(idx); }
+  else f.bytes([0x20, 0x20, 0x20, 0x20, 0x64, 0x20, 0x00, 0x20, 0x00, 0x20, 0x20, 0x20, 0xFF]);
+  for (let k = idx.length; k < 463; k++) f.u8(0x20);
+  // stitch block
+  const start = f.n;
+  f.bytes([0, 0]); f.i24(0); f.bytes([0x31, 0xff, 0xf0]);
+  f.i16(skPyRound(ext[2] - ext[0])); f.i16(skPyRound(ext[3] - ext[1]));
+  f.i16(0x1E0); f.i16(0x1B0);
+  const val = (v, long, fl) => {
+    if (!long && v > -64 && v < 63) f.u8(v & 0x7F);
+    else { v &= 0x0FFF; v |= 0x8000; v |= fl << 8; f.u8((v >> 8) & 255); f.u8(v & 255); }
+  };
+  let colorTwo = true, jumping = true, init = true, xx = 0, yy = 0;
+  for (const s of stitches) {
+    const dx = skPyRound(s[0] - xx), dy = skPyRound(s[1] - yy); xx += dx; yy += dy;
+    const c = s[2];
+    if (c === SK_CMD.S) {
+      if (jumping) { if (dx !== 0 && dy !== 0) { val(0); val(0); } jumping = false; }
+      val(dx); val(dy);
+    } else if (c === SK_CMD.J) {
+      jumping = true; const fl = init ? 0x10 : 0x20; val(dx, true, fl); val(dy, true, fl);
+    } else if (c === SK_CMD.C) {
+      if (jumping) { val(0); val(0); jumping = false; }
+      f.bytes([0xfe, 0xb0, colorTwo ? 2 : 1]); colorTwo = !colorTwo;
+    } else if (c === SK_CMD.E) { f.u8(0xff); break; }
+    init = false;
+  }
+  f.put24(start + 2, f.n - start);
+  // graphics
+  let g = PEC_BLANK.slice(), blk = [];
+  for (const s of stitches) { if (s[2] === SK_CMD.S) blk.push(s); else { if (blk.length) skDrawScaled(ext, blk, g, 6, 4); blk = []; } }
+  if (blk.length) skDrawScaled(ext, blk, g, 6, 4);
+  f.bytes(g);
+  let cs = 0;
+  const emit = (a) => { const gg = PEC_BLANK.slice(); skDrawScaled(ext, a.filter(s => s[2] === SK_CMD.S), gg, 6, 5); f.bytes(gg); };
+  for (let k = 0; k < stitches.length; k++) if (stitches[k][2] === SK_CMD.C) { emit(stitches.slice(cs, k + 1)); cs = k + 1; }
+  if (cs !== stitches.length) emit(stitches.slice(cs));
+}
+
+/* DST: moves must be <= 121 units; call skSplitForDST first. */
+function skDstRecord(x, y, c) {
+  y = -y; let b0 = 0, b1 = 0, b2 = 0; const bit = n => 1 << n;
+  if (c === SK_CMD.J) b2 += bit(7);
+  if (c === SK_CMD.S || c === SK_CMD.J) {
+    b2 += 3;
+    if (x > 40) { b2 += bit(2); x -= 81; } if (x < -40) { b2 += bit(3); x += 81; }
+    if (x > 13) { b1 += bit(2); x -= 27; } if (x < -13) { b1 += bit(3); x += 27; }
+    if (x > 4) { b0 += bit(2); x -= 9; } if (x < -4) { b0 += bit(3); x += 9; }
+    if (x > 1) { b1 += bit(0); x -= 3; } if (x < -1) { b1 += bit(1); x += 3; }
+    if (x > 0) { b0 += bit(0); x -= 1; } if (x < 0) { b0 += bit(1); x += 1; }
+    if (y > 40) { b2 += bit(5); y -= 81; } if (y < -40) { b2 += bit(4); y += 81; }
+    if (y > 13) { b1 += bit(5); y -= 27; } if (y < -13) { b1 += bit(4); y += 27; }
+    if (y > 4) { b0 += bit(5); y -= 9; } if (y < -4) { b0 += bit(4); y += 9; }
+    if (y > 1) { b1 += bit(7); y -= 3; } if (y < -1) { b1 += bit(6); y += 3; }
+    if (y > 0) { b0 += bit(7); y -= 1; } if (y < 0) { b0 += bit(6); y += 1; }
+    if (x !== 0 || y !== 0) throw new Error('DST move too long');
+  } else if (c === SK_CMD.C) b2 = 0b11000011;
+  else if (c === SK_CMD.E) b2 = 0b11110011;
+  return [b0, b1, b2];
+}
+function skSplitForDST(st) {
+  const out = []; let px = 0, py = 0;
+  for (const s of st) {
+    if (s[2] === SK_CMD.S || s[2] === SK_CMD.J) {
+      const dx = s[0] - px, dy = s[1] - py, n = Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) / 121);
+      for (let k = 1; k < n; k++) out.push([Math.round(px + dx * k / n), Math.round(py + dy * k / n), s[2] === SK_CMD.S && n > 1 ? SK_CMD.J : s[2]]);
+      px = s[0]; py = s[1];
+    }
+    out.push(s);
+  }
+  return out;
+}
+function skWriteDST(stitches, name) {
+  const st = skSplitForDST(stitches), f = new SkBuf(), b = skBounds(st);
+  const nS = st.length, nC = st.filter(s => s[2] === SK_CMD.C).length;
+  const pad = (v, n) => String(v).padStart(n, ' ');
+  f.str('LA:' + (name || 'Untitled').padEnd(16, ' ') + '\r');
+  f.str('ST:' + pad(nS, 7) + '\r'); f.str('CO:' + pad(nC, 3) + '\r');
+  f.str('+X:' + pad(Math.abs(b[2]), 5) + '\r'); f.str('-X:' + pad(Math.abs(b[0]), 5) + '\r');
+  f.str('+Y:' + pad(Math.abs(b[3]), 5) + '\r'); f.str('-Y:' + pad(Math.abs(b[1]), 5) + '\r');
+  const l = st[st.length - 1], ax = Math.trunc(l[0]), ay = -Math.trunc(l[1]);
+  f.str('AX:' + (ax >= 0 ? '+' : '-') + pad(Math.abs(ax), 5) + '\r');
+  f.str('AY:' + (ay >= 0 ? '+' : '-') + pad(Math.abs(ay), 5) + '\r');
+  f.str('MX:+' + pad(0, 5) + '\r'); f.str('MY:+' + pad(0, 5) + '\r'); f.str('PD:******\r');
+  f.u8(0x1a); while (f.n < 512) f.u8(0x20);
+  let xx = 0, yy = 0;
+  for (const s of st) {
+    const dx = skPyRound(s[0] - xx), dy = skPyRound(s[1] - yy); xx += dx; yy += dy;
+    if (s[2] === SK_CMD.T) { f.bytes(skDstRecord(2, 2, SK_CMD.J)); f.bytes(skDstRecord(-4, -4, SK_CMD.J)); f.bytes(skDstRecord(2, 2, SK_CMD.J)); }
+    else f.bytes(skDstRecord(dx, dy, s[2]));
+  }
+  return f.out();
+}
+if (typeof module !== 'undefined') module.exports = { skWritePES, skWriteDST, skPecName, skSplitForDST, SK_CMD, PEC_THREADS };
+
+const SAMPLE_PNG = "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";
+
+</script>
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const store = { get(k, d) { try { const v = localStorage.getItem('sk.' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem('sk.' + k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } } };
+function h(tag, attrs, ...kids) { // safe element builder (no innerHTML for user text)
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k.startsWith('on')) el.addEventListener(k.slice(2), v); else if (k === 'style') el.style.cssText = v; else el.setAttribute(k, v === true ? '' : v);
+  }
+  for (const c of kids.flat()) if (c != null && c !== false) el.append(c.nodeType ? c : document.createTextNode(String(c)));
+  return el;
+}
+const ICON = {
+  ok: '<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#067647" stroke-width="2.5"><path d="M5 12l5 5 9-10"/></svg>',
+  warn: '<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9A3412" stroke-width="2.2"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/></svg>',
+  err: '<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#B42318" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>',
+  info: '<svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#36069A" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>'
+};
+const icon = k => { const s = document.createElement('span'); s.innerHTML = ICON[k]; return s.firstChild; };
+const announce = t => { const l = $('#live'); l.textContent = ''; setTimeout(() => { l.textContent = t; }, 60); };
+
+/* ---------- worker bridge ---------- */
+let worker = null, seq = 0; const pending = new Map();
+try {
+  const src = document.getElementById('sk-engine').textContent +
+    '\nonmessage=e=>{const m=e.data;let r;try{if(m.type==="load")r=SKE.load(m.w,m.h,m.data);' +
+    'else if(m.type==="quant"){r=SKE.quantize(m.k,m.removeBg);for(const p of m.merges)r=SKE.merge(p[0],p[1]);r.preview=SKE.labelPreview();r.aspect=SKE.aspect();}' +
+    'else if(m.type==="plan")r=SKE.plan(m.settings);postMessage({id:m.id,ok:true,r});}catch(err){postMessage({id:m.id,ok:false,err:String(err&&err.message||err)})}};';
+  worker = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+  worker.onmessage = e => { const p = pending.get(e.data.id); if (!p) return; pending.delete(e.data.id); e.data.ok ? p.res(e.data.r) : p.rej(new Error(e.data.err)); };
+  worker.onerror = () => { worker = null; };
+} catch (e) { worker = null; }
+function call(type, msg) {
+  if (!worker) return new Promise((res, rej) => setTimeout(() => { try {
+    let r; if (type === 'load') r = SKE.load(msg.w, msg.h, msg.data);
+    else if (type === 'quant') { r = SKE.quantize(msg.k, msg.removeBg); for (const p of msg.merges) r = SKE.merge(p[0], p[1]); r.preview = SKE.labelPreview(); r.aspect = SKE.aspect(); }
+    else r = SKE.plan(msg.settings); res(r); } catch (e) { rej(e); } }, 10));
+  const id = ++seq; return new Promise((res, rej) => { pending.set(id, { res, rej }); worker.postMessage(Object.assign({ id, type }, msg)); });
+}
+
+/* ---------- state ---------- */
+const PRESETS = {
+  woven: { density: 0.42, stitchLen: 3.5, underlay: true, pull: 0.15, note: 'Use a medium tearaway or cutaway stabilizer.' },
+  knit: { density: 0.40, stitchLen: 3.0, underlay: true, pull: 0.25, note: 'Use a cutaway stabilizer so the design does not stretch out of shape.' },
+  towel: { density: 0.38, stitchLen: 3.5, underlay: true, pull: 0.20, note: 'Add a water-soluble topping so stitches do not sink into the loops.' },
+  light: { density: 0.45, stitchLen: 3.5, underlay: true, pull: 0.12, note: 'Use a tearaway stabilizer and hoop the fabric drum-tight.' }
+};
+const S = { name: 'design', src: null, info: null, k: 3, removeBg: false, merges: [], palette: [], areas: [], colors: [], order: [],
+  widthMM: null, aspect: 1, hoop: store.get('hoop', '100x100'), preset: store.get('preset', 'woven'), fabric: store.get('fabric', '#2B3A55'),
+  result: null, preview: null, view: 'stitch', open: -1, step: 1 };
+const hoopMM = () => S.hoop.split('x').map(Number);
+const hist = { stack: [], i: -1 };
+const snap = () => JSON.stringify({ k: S.k, removeBg: S.removeBg, merges: S.merges, colors: S.colors, order: S.order, widthMM: S.widthMM, preset: S.preset });
+function pushHist() { const s = snap(); if (hist.stack[hist.i] === s) return; hist.stack = hist.stack.slice(0, hist.i + 1); hist.stack.push(s); hist.i = hist.stack.length - 1; if (hist.stack.length > 60) { hist.stack.shift(); hist.i--; } undoUI(); }
+function undoUI() { $('#undo').disabled = hist.i <= 0; $('#redo').disabled = hist.i >= hist.stack.length - 1; }
+async function restore(i) {
+  hist.i = i; const s = JSON.parse(hist.stack[i]);
+  const requant = s.k !== S.k || s.removeBg !== S.removeBg || JSON.stringify(s.merges) !== JSON.stringify(S.merges);
+  Object.assign(S, s); undoUI(); syncControls();
+  if (requant) await requant_(false); else { renderThreads(); replan(); }
+}
+
+/* ---------- color helpers ---------- */
+const hex = c => '#' + c.map(v => Math.round(v).toString(16).padStart(2, '0')).join('').toUpperCase();
+const rgbOf = s => [1, 3, 5].map(i => parseInt(s.slice(i, i + 2), 16));
+function lum(c) { const f = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]); }
+const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+const fabricName = () => ({ '#FFFFFF': 'white', '#2B3A55': 'denim', '#212529': 'black', '#E9DCC9': 'natural canvas' })[S.fabric.toUpperCase()] || 'custom-color';
+
+/* ---------- step navigation ---------- */
+function setStep(n, focus = true) {
+  S.step = n;
+  $('#view-upload').hidden = n !== 1; $('#view-work').hidden = n !== 2; $('#view-download').hidden = n !== 3;
+  [1, 2, 3].forEach(i => { const li = $('#st-' + i); if (i === n) li.setAttribute('aria-current', 'step'); else li.removeAttribute('aria-current'); li.classList.toggle('done', i < n); });
+  const hd = { 1: '#h-upload', 2: '#h-work', 3: '#h-download' }[n];
+  if (focus) { $(hd).focus(); }
+  announce(['', 'Step 1 of 3: Upload', 'Step 2 of 3: Adjust threads', 'Step 3 of 3: Download'][n]);
+  if (n === 2) requestAnimationFrame(draw);
+  if (n === 3) buildDownload();
+  window.scrollTo(0, 0);
+}
+
+/* ---------- upload ---------- */
+function status(el, kind, title, body, actions) {
+  el.replaceChildren();
+  if (!kind) return;
+  const box = h('div', { class: 'alert', role: kind === 'err' ? 'alert' : 'status' }, icon(kind),
+    h('div', {}, h('p', { style: 'margin:0;font-weight:700' }, title), body ? h('p', { class: 'small muted', style: 'margin:4px 0 0' }, body) : null,
+      actions ? h('div', { class: 'actions' }, actions) : null));
+  el.append(box);
+}
+function progress(el, label, pct) {
+  el.replaceChildren(h('div', { class: 'card', role: 'status' }, h('p', { style: 'font-weight:700' }, label),
+    h('div', { class: 'progress' }, h('span', { style: 'width:' + pct + '%' }))));
+}
+async function intakeFile(file) {
+  const st = $('#upload-status');
+  if (!file) return;
+  if (/\.json$/i.test(file.name) || file.type === 'application/json') return loadProject(file);
+  if (/heic|heif/i.test(file.type) || /\.(heic|heif)$/i.test(file.name)) return status(st, 'err', "We can't read HEIC photos yet", 'Export or share the image as PNG or JPG, then try again.');
+  if (!/^image\//.test(file.type) && !/\.(png|jpe?g|webp|gif|svg)$/i.test(file.name)) return status(st, 'err', "That file isn't an image", 'Choose a PNG, JPG, WebP, GIF or SVG file.');
+  if (file.size > 20 * 1024 * 1024) return status(st, 'err', 'That file is larger than 20 MB', 'Save a smaller version of the image and try again.');
+  const url = URL.createObjectURL(file);
+  try { const img = await loadImg(url); await intakeImage(img, file.name); }
+  catch (e) { status(st, 'err', "We couldn't read that file", 'It may be damaged or in a format your browser does not support. Try saving it as PNG.'); }
+  finally { URL.revokeObjectURL(url); }
+}
+function loadImg(src) { return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; }); }
+async function intakeImage(img, name, state) {
+  const st = $('#upload-status');
+  progress(st, 'Reading your image…', 20);
+  let w = img.naturalWidth || 1000, hgt = img.naturalHeight || 1000;
+  const big = Math.max(w, hgt) > 1000, scale = 1000 / Math.max(w, hgt);
+  w = Math.max(1, Math.round(w * scale)); hgt = Math.max(1, Math.round(hgt * scale));
+  const c = document.createElement('canvas'); c.width = w; c.height = hgt;
+  const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0, w, hgt);
+  S.src = c.toDataURL('image/png');
+  S.name = (name || 'design').replace(/\.[^.]+$/, '');
+  const data = g.getImageData(0, 0, w, hgt).data;
+  progress(st, big ? 'Large image, so we scaled it down first. Finding colors…' : 'Finding colors…', 55);
+  S.info = await call('load', { w, h: hgt, data });
+  hist.stack = []; hist.i = -1; S.open = -1; S.merges = [];
+  if (state) Object.assign(S, state);
+  else { S.k = Math.max(1, Math.min(12, S.info.suggested)); S.removeBg = !!S.info.solidBg && !S.info.transparent; S.widthMM = null; }
+  progress(st, 'Planning stitches…', 85);
+  $('#bg-wrap').hidden = !S.info.solidBg || S.info.transparent;
+  const pw = $('#photo-warn'); pw.replaceChildren();
+  if (S.info.photoLike) status(pw, 'warn', 'This looks like a photo', 'Embroidery works best with 2 to 8 flat colors, so we simplified it. Fewer colors give cleaner results.');
+  await requant_(!state);
+  st.replaceChildren();
+  setStep(2);
+  pushHist();
+}
+
+/* ---------- quantize + plan ---------- */
+async function requant_(resetColors = true) {
+  showBusy(true);
+  const r = await call('quant', { k: S.k, removeBg: S.removeBg, merges: S.merges });
+  S.palette = r.palette; S.areas = r.areas; S.aspect = r.aspect;
+  const p = r.preview; S.preview = document.createElement('canvas'); S.preview.width = p.w; S.preview.height = p.h;
+  S.preview.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(p.data), p.w, p.h), 0, 0);
+  if (resetColors || S.colors.length !== S.palette.length) {
+    const pre = PRESETS[S.preset];
+    S.colors = S.palette.map(rgb => ({ rgb, name: skPecName(rgb).name, skip: false, angle: null, density: pre.density, stitchLen: pre.stitchLen, underlay: pre.underlay, pull: pre.pull }));
+    S.order = S.palette.map((_, i) => i).sort((a, b) => S.areas[b] - S.areas[a]);
+  }
+  if (!S.widthMM) fitToHoop(false);
+  syncControls(); renderThreads();
+  await replan();
+}
+let planTimer = 0, planSeq = 0;
+function schedulePlan() { clearTimeout(planTimer); showBusy(true); planTimer = setTimeout(replan, 250); }
+async function replan() {
+  const my = ++planSeq; showBusy(true);
+  try {
+    const r = await call('plan', { settings: { widthMM: S.widthMM, colors: S.colors, order: S.order } });
+    if (my !== planSeq) return;
+    S.result = r; showBusy(false); draw(); renderStats(); updateCounts();
+  } catch (e) { showBusy(false); status($('#photo-warn'), 'err', 'Something went wrong while planning stitches', 'Try fewer colors or a different size. (' + e.message + ')'); }
+}
+function showBusy(b) { $('#busy').hidden = !b; }
+function fitToHoop(plan = true) {
+  const [hw, hh] = hoopMM(), m = 4;
+  S.widthMM = Math.floor(Math.min(hw - m, (hh - m) / S.aspect) * 2) / 2;
+  syncControls();
+  if (plan) { pushHist(); schedulePlan(); }
+}
+
+/* ---------- controls ---------- */
+function syncControls() {
+  $('#count').value = S.k; $('#count-out').textContent = S.palette.length && S.palette.length !== S.k ? S.palette.length + ' (after merging)' : S.k;
+  $('#bg').checked = S.removeBg; $('#preset').value = S.preset; $('#preset-note').textContent = PRESETS[S.preset].note;
+  if (S.widthMM) { $('#width').value = S.widthMM; const [hw, hh] = hoopMM(); const hmm = S.widthMM * S.aspect;
+    $('#size-note').textContent = `Height ${hmm.toFixed(1)} mm. Hoop ${hw} × ${hh} mm.` + (S.widthMM > hw || hmm > hh ? ' Too big for this hoop.' : ''); }
+  $('#hoop').value = S.hoop; $('#hoop2').value = S.hoop;
+  document.querySelectorAll('input[name=fabric]').forEach(r => { r.checked = r.value.toUpperCase() === S.fabric.toUpperCase(); });
+}
+function renderThreads() {
+  const ol = $('#threads'); ol.replaceChildren();
+  S.order.forEach((ci, pos) => {
+    const c = S.colors[ci]; const open = S.open === ci;
+    const low = contrast(c.rgb, rgbOf(S.fabric)) < 1.5;
+    const li = h('li', { class: (open ? 'open ' : '') + (c.skip ? 'skipped' : ''), 'data-ci': ci });
+    const head = h('div', { class: 'thead' },
+      h('span', { class: 'dot', style: 'background:' + hex(c.rgb), 'aria-hidden': 'true' }),
+      h('div', { class: 'tname' }, h('b', {}, `${pos + 1} · ${c.name}`), h('span', { 'data-count': ci }, c.skip ? 'Skipped' : '…')),
+      h('div', { class: 'tbtns' },
+      h('button', { class: 'btn icon', type: 'button', 'aria-label': `Move ${c.name} up`, disabled: pos === 0, 'data-act': 'up', onclick: () => move(ci, -1) }, '↑'),
+      h('button', { class: 'btn icon', type: 'button', 'aria-label': `Move ${c.name} down`, disabled: pos === S.order.length - 1, 'data-act': 'down', onclick: () => move(ci, 1) }, '↓'),
+      h('button', { class: 'btn icon', type: 'button', 'aria-expanded': open ? 'true' : 'false', 'aria-controls': 'tb-' + ci, 'aria-label': `${open ? 'Close' : 'Edit'} ${c.name} settings`, 'data-act': 'edit',
+        onclick: () => { S.open = open ? -1 : ci; renderThreads(); ol.querySelector(`[data-ci="${ci}"] [data-act=edit]`).focus(); } }, open ? 'Done' : 'Edit')));
+    li.append(head);
+    if (low && !c.skip) li.append(h('p', { class: 'note' }, `Low contrast on ${fabricName()} fabric. Try a lighter or darker thread.`));
+    if (open) li.append(threadBody(ci));
+    ol.append(li);
+  });
+  updateCounts();
+}
+function threadBody(ci) {
+  const c = S.colors[ci], id = s => `t${ci}-${s}`;
+  const set = (k, v, re) => { c[k] = v; pushHist(); if (re) renderThreads(); schedulePlan(); };
+  const sel = h('select', { id: id('pal'), onchange: e => { if (e.target.value === '') return; const t = PEC_THREADS[+e.target.value]; c.rgb = [t[0], t[1], t[2]]; c.name = t[3]; pushHist(); renderThreads(); refocus(ci, 'pal'); schedulePlan(); } },
+    h('option', { value: '' }, 'Choose a machine color…'), ...PEC_THREADS.map((t, i) => t ? h('option', { value: i }, t[3]) : null));
+  const others = S.order.filter(o => o !== ci);
+  const range = (key, label, min, max, step, unit) => h('div', {},
+    h('label', { for: id(key) }, `${label}: `, h('output', { id: id(key) + '-o' }, c[key] + ' ' + unit)),
+    h('input', { type: 'range', id: id(key), min, max, step, value: c[key], oninput: e => { $('#' + id(key) + '-o').textContent = e.target.value + ' ' + unit; }, onchange: e => set(key, +e.target.value) }));
+  return h('div', { class: 'tbody', id: 'tb-' + ci },
+    h('div', { class: 'full' }, h('label', { for: id('name') }, 'Thread name'),
+      h('input', { type: 'text', id: id('name'), value: c.name, maxlength: 40, onchange: e => { c.name = e.target.value.trim() || skPecName(c.rgb).name; pushHist(); renderThreads(); refocus(ci, 'name'); } })),
+    h('div', { class: 'full' }, h('label', { for: id('col') }, 'Thread color'),
+      h('div', { class: 'colorrow' }, h('input', { type: 'color', id: id('col'), value: hex(c.rgb).toLowerCase(), onchange: e => { c.rgb = rgbOf(e.target.value); pushHist(); renderThreads(); refocus(ci, 'col'); schedulePlan(); } }), sel)),
+    h('div', { class: 'full' }, h('label', { class: 'check' }, h('input', { type: 'checkbox', id: id('auto'), checked: c.angle == null, onchange: e => { set('angle', e.target.checked ? null : 45, true); refocus(ci, 'auto'); } }), 'Stitch angle follows the shape')),
+    c.angle == null ? null : h('div', { class: 'full' }, h('label', { for: id('angle') }, 'Stitch angle: ', h('output', { id: id('angle') + '-o' }, c.angle + '°')),
+      h('input', { type: 'range', id: id('angle'), min: 0, max: 180, step: 5, value: c.angle, oninput: e => { $('#' + id('angle') + '-o').textContent = e.target.value + '°'; }, onchange: e => set('angle', +e.target.value) })),
+    range('density', 'Row spacing', 0.3, 0.8, 0.02, 'mm'),
+    range('stitchLen', 'Stitch length', 2, 7, 0.5, 'mm'),
+    range('pull', 'Pull compensation', 0, 0.6, 0.05, 'mm'),
+    h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: c.underlay, onchange: e => set('underlay', e.target.checked) }), 'Underlay'),
+    h('label', { class: 'check' }, h('input', { type: 'checkbox', checked: c.skip, onchange: e => { set('skip', e.target.checked, true); refocus(ci, 'edit'); } }), 'Skip this color'),
+    h('p', { class: 'small muted full', style: 'margin:0' }, 'Smaller row spacing means denser, more solid coverage.'),
+    others.length ? h('div', { class: 'full' }, h('label', { for: id('merge') }, 'Merge into another color'),
+      h('div', { class: 'colorrow' }, h('select', { id: id('merge') }, ...others.map(o => h('option', { value: o }, S.colors[o].name))),
+        h('button', { class: 'btn', type: 'button', onclick: () => mergeInto(ci, +$('#' + id('merge')).value) }, 'Merge'))) : null,
+    h('div', { class: 'full' }, h('button', { class: 'btn link', type: 'button', onclick: () => { const p = PRESETS[S.preset]; Object.assign(c, { angle: null, density: p.density, stitchLen: p.stitchLen, pull: p.pull, underlay: p.underlay, skip: false }); pushHist(); renderThreads(); refocus(ci, 'edit'); schedulePlan(); } }, 'Reset this color')),
+    h('p', { class: 'small muted full', style: 'margin:0' }, 'Coming soon: satin stitch for thin shapes, and splitting shading into separate threads.'));
+}
+function refocus(ci, what) { const el = what === 'edit' ? $(`#threads [data-ci="${ci}"] [data-act=edit]`) : document.getElementById(`t${ci}-${what}`); if (el) el.focus(); }
+function move(ci, d) {
+  const i = S.order.indexOf(ci), j = i + d; if (j < 0 || j >= S.order.length) return;
+  [S.order[i], S.order[j]] = [S.order[j], S.order[i]]; pushHist(); renderThreads();
+  const btn = $(`#threads [data-ci="${ci}"] [data-act=${d < 0 ? 'up' : 'down'}]`);
+  (btn && !btn.disabled ? btn : $(`#threads [data-ci="${ci}"] [data-act=edit]`)).focus();
+  announce(`${S.colors[ci].name} moved to position ${j + 1} of ${S.order.length}`); schedulePlan();
+}
+async function mergeInto(a, b) {
+  const nameA = S.colors[a].name, nameB = S.colors[b].name;
+  const keep = S.colors.filter((_, i) => i !== a), order = S.order.filter(i => i !== a).map(i => i > a ? i - 1 : i);
+  S.merges = S.merges.concat([[a, b]]); S.colors = keep; S.order = order; S.open = -1;
+  await requant_(false); pushHist(); announce(`${nameA} merged into ${nameB}`); $('#h-threads').focus();
+}
+function updateCounts() {
+  if (!S.result) return;
+  const m = new Map(S.result.meta.map(x => [x.index, x]));
+  document.querySelectorAll('[data-count]').forEach(el => { const ci = +el.dataset.count, x = m.get(ci);
+    el.textContent = S.colors[ci] && S.colors[ci].skip ? 'Skipped' : x ? `${x.stitches.toLocaleString()} stitches` + (skPecName(S.colors[ci].rgb).name !== S.colors[ci].name ? ` · machine: ${skPecName(S.colors[ci].rgb).name}` : '') : ''; });
+}
+function renderStats() {
+  const r = S.result.stats, mins = Math.max(1, Math.round(r.count / 600 + r.colors * 0.5));
+  const items = [['Size', `${r.widthMM.toFixed(1)} × ${r.heightMM.toFixed(1)} mm`], ['Stitches', r.count.toLocaleString()], ['Thread colors', r.colors], ['Jumps to clip', r.trims], ['Stitch time', `about ${mins} min`]];
+  $('#stats').replaceChildren(...items.map(([a, b]) => h('div', {}, h('dt', {}, a), h('dd', {}, b))));
+  $('#cv').setAttribute('aria-label', `Stitch preview on ${fabricName()} fabric: ${r.colors} thread colors, ${r.widthMM.toFixed(0)} by ${r.heightMM.toFixed(0)} millimeters, ${r.count} stitches.`);
+}
+
+/* ---------- preview drawing ---------- */
+let playing = 0, playFrac = 1;
+function draw() {
+  const cv = $('#cv'); if (!cv || $('#view-work').hidden) return;
+  const r = cv.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = Math.max(1, Math.round(r.width * dpr)); cv.height = Math.max(1, Math.round(r.height * dpr));
+  const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const W = r.width, H = r.height, fab = rgbOf(S.fabric);
+  g.fillStyle = S.fabric; g.fillRect(0, 0, W, H);
+  const [hw, hh] = hoopMM(); const sc = Math.min(W, H) * 0.9 / Math.max(hw, hh); const ox = W / 2, oy = H / 2;
+  const lineC = lum(fab) > 0.35 ? '#212529' : '#FFFFFF';
+  g.setLineDash([6, 6]); g.strokeStyle = lineC; g.lineWidth = 1.5; g.strokeRect(ox - hw * sc / 2, oy - hh * sc / 2, hw * sc, hh * sc); g.setLineDash([]);
+  g.fillStyle = lineC; g.font = '600 13px system-ui, sans-serif'; g.fillText(`Hoop ${hw} × ${hh} mm`, ox - hw * sc / 2, oy - hh * sc / 2 - 8 < 14 ? oy - hh * sc / 2 + 18 : oy - hh * sc / 2 - 8);
+  if (S.view === 'orig' && S.preview) {
+    const w = S.widthMM * sc, hgt = S.widthMM * S.aspect * sc;
+    // crop preview to content box by drawing full image scaled to content aspect
+    g.imageSmoothingEnabled = false; g.drawImage(S.preview, ...cropBox(), ox - w / 2, oy - hgt / 2, w, hgt); return;
+  }
+  if (!S.result) return;
+  const st = S.result.stitches, th = S.result.threads, end = Math.floor(st.length * playFrac);
+  g.lineCap = 'round'; g.lineJoin = 'round'; g.lineWidth = Math.max(1, 0.38 * sc);
+  let ti = 0, prev = null; g.strokeStyle = hex(th[0] || [0, 0, 0]); g.beginPath();
+  for (let i = 0; i < end; i++) {
+    const [x, y, c] = st[i];
+    if (c === 4) { g.stroke(); ti++; g.strokeStyle = hex(th[ti] || [0, 0, 0]); g.beginPath(); prev = null; continue; }
+    if (c !== 1) { prev = null; continue; }
+    const px = ox + x / 10 * sc, py = oy + y / 10 * sc;
+    if (prev) { g.moveTo(prev[0], prev[1]); g.lineTo(px, py); }
+    prev = [px, py];
+  }
+  g.stroke();
+}
+function cropBox() { // content box of quantized preview (non-transparent)
+  if (S._crop && S._crop.src === S.preview) return S._crop.box;
+  const c = S.preview, d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let x0 = c.width, y0 = c.height, x1 = 0, y1 = 0;
+  for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) if (d[(y * c.width + x) * 4 + 3]) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  const box = x1 < x0 ? [0, 0, c.width, c.height] : [x0, y0, x1 - x0 + 1, y1 - y0 + 1]; S._crop = { src: c, box }; return box;
+}
+function play() {
+  const btn = $('#play');
+  if (playing) { cancelAnimationFrame(playing); playing = 0; playFrac = 1; draw(); btn.textContent = 'Play stitch-out'; return; }
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { announce('Animation is off because your device prefers reduced motion. Showing the finished design.'); return; }
+  S.view = 'stitch'; syncView(); const t0 = performance.now(), dur = 7000; btn.textContent = 'Stop';
+  const step = t => { playFrac = Math.min(1, (t - t0) / dur); draw(); if (playFrac < 1) playing = requestAnimationFrame(step); else { playing = 0; btn.textContent = 'Play stitch-out'; } };
+  playing = requestAnimationFrame(step);
+}
+function syncView() { $('#pv-orig').setAttribute('aria-pressed', S.view === 'orig'); $('#pv-stitch').setAttribute('aria-pressed', S.view === 'stitch'); draw(); }
+
+/* ---------- download step ---------- */
+function safeName(s) { return (s || '').toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40) || 'design'; }
+function buildDownload() {
+  $('#success').replaceChildren();
+  const r = S.result.stats, [hw, hh] = hoopMM(), fits = r.widthMM <= hw && r.heightMM <= hh;
+  const thin = S.result.meta.reduce((a, m) => a + m.thin, 0);
+  const low = S.order.filter(i => !S.colors[i].skip && contrast(S.colors[i].rgb, rgbOf(S.fabric)) < 1.5).map(i => S.colors[i].name);
+  const skipped = S.colors.filter(c => c.skip).map(c => c.name);
+  const items = [];
+  const back = (label) => h('button', { class: 'btn link', type: 'button', onclick: () => setStep(2) }, label);
+  items.push(fits ? ['ok', h('span', {}, h('strong', {}, 'Fits your hoop. '), `${r.widthMM.toFixed(1)} × ${r.heightMM.toFixed(1)} mm inside ${hw} × ${hh} mm.`)]
+    : ['err', h('span', { id: 'fit-msg' }, h('strong', {}, "Too big for your hoop. "), `${r.widthMM.toFixed(1)} × ${r.heightMM.toFixed(1)} mm won't fit in ${hw} × ${hh} mm. `,
+      h('button', { class: 'btn link', type: 'button', onclick: async () => { fitToHoop(false); pushHist(); await replan(); buildDownload(); $('#h-download').focus(); } }, 'Fit to hoop'))]);
+  items.push(['ok', h('span', {}, h('strong', {}, `${r.count.toLocaleString()} stitches, longest ${r.longestMM.toFixed(1)} mm. `), 'Every stitch is within machine limits.')]);
+  if (thin) items.push(['warn', h('span', {}, h('strong', {}, `${thin} thin ${thin === 1 ? 'detail' : 'details'} under 1.5 mm `), 'may stitch slightly rounded. A larger size helps. ', back('Change size'))]);
+  items.push(['info', h('span', {}, h('strong', {}, `${r.trims} jump ${r.trims === 1 ? 'thread' : 'threads'} to clip. `), 'Many home machines don’t trim between shapes, so snip connecting threads after each color.')]);
+  if (low.length) items.push(['warn', h('span', {}, h('strong', {}, 'Low contrast with your fabric: '), low.join(', ') + '. ', back('Change thread'))]);
+  if (skipped.length) items.push(['info', h('span', {}, h('strong', {}, 'Skipped: '), skipped.join(', ') + '.')]);
+  $('#preflight').replaceChildren(...items.map(([k, n]) => h('li', {}, icon(k), n)));
+  const m = new Map(S.result.meta.map(x => [x.index, x]));
+  $('#sheet').replaceChildren(...S.order.filter(i => !S.colors[i].skip).map((ci, n) => { const c = S.colors[ci];
+    return h('tr', {}, h('td', {}, n + 1), h('td', {}, h('span', { style: 'display:inline-flex;gap:8px;align-items:center' }, h('span', { class: 'dot', style: 'width:18px;height:18px;background:' + hex(c.rgb), 'aria-hidden': 'true' }), c.name)),
+      h('td', {}, `${skPecName(c.rgb).name} (#${skPecName(c.rgb).index})`), h('td', {}, hex(c.rgb)), h('td', {}, (m.get(ci) ? m.get(ci).stitches : 0).toLocaleString())); }));
+  if (!$('#fname').value) $('#fname').value = safeName(S.name) + '_' + S.hoop;
+  const dl = $('#download'); dl.disabled = !fits;
+  if (!fits) dl.setAttribute('aria-describedby', 'fit-msg'); else dl.removeAttribute('aria-describedby');
+}
+function fmt() { return document.querySelector('input[name=fmt]:checked').value; }
+function saveBlob(bytes, name, type) {
+  const url = URL.createObjectURL(new Blob([bytes], { type }));
+  const a = h('a', { href: url, download: name }); document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+function doDownload() {
+  const f = fmt(), base = safeName($('#fname').value); $('#fname').value = base;
+  const st = S.result.stitches, th = S.result.threads;
+  const bytes = f === 'pes' ? skWritePES(st, th, base) : skWriteDST(st, base);
+  saveBlob(bytes, `${base}.${f}`, 'application/octet-stream');
+  try { if (window.goatcounter && window.goatcounter.count) window.goatcounter.count({ path: 'export', title: 'Export ' + f.toUpperCase(), event: true }); } catch (e) { /* analytics optional */ }
+  const count = h('p', { class: 'small muted', style: 'margin:0', hidden: true });
+  const box = h('div', { class: 'card', role: 'status', style: 'margin-bottom:20px;display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between' },
+    h('div', { style: 'display:flex;gap:12px;align-items:center' }, icon('ok'), h('div', {}, h('p', { style: 'margin:0;font-weight:700;font-size:18px' }, `${base}.${f} is downloaded`),
+      h('p', { class: 'small muted', style: 'margin:0' }, 'Check your Downloads folder, then copy it to a USB stick. Stitched it? Share a photo with #StitchKit.'), count)),
+    h('div', { style: 'display:flex;flex-wrap:wrap;gap:8px' }, h('button', { class: 'btn primary', type: 'button', onclick: newDesign }, 'Convert another design'),
+      h('button', { class: 'btn', type: 'button', onclick: () => setStep(2) }, 'Back to edit this one')));
+  $('#success').replaceChildren(box);
+  fetch('https://stitchkit.goatcounter.com/counter/export.json').then(r => r.ok ? r.json() : null).then(j => { if (j && j.count) { count.textContent = `${j.count} designs converted with StitchKit so far.`; count.hidden = false; } }).catch(() => {});
+}
+function newDesign() { S.result = null; $('#fname').value = ''; $('#upload-status').replaceChildren(); $('#file').value = ''; setStep(1); }
+function saveProject() {
+  const state = JSON.parse(snap()); state.hoop = S.hoop;
+  const json = JSON.stringify({ app: 'stitchkit', v: 1, name: S.name, image: S.src, state });
+  saveBlob(new TextEncoder().encode(json), safeName($('#fname').value || S.name) + '.stitchkit.json', 'application/json');
+  announce('Project saved. Open it here any time to keep editing.');
+}
+async function loadProject(file) {
+  const st = $('#upload-status');
+  try {
+    const j = JSON.parse(await file.text());
+    if (j.app !== 'stitchkit' || typeof j.image !== 'string' || !j.image.startsWith('data:image/png;base64,')) throw new Error('bad');
+    const img = await loadImg(j.image); const s = j.state || {};
+    const state = { k: +s.k || 3, removeBg: !!s.removeBg, merges: Array.isArray(s.merges) ? s.merges : [], colors: Array.isArray(s.colors) ? s.colors : [], order: Array.isArray(s.order) ? s.order : [],
+      widthMM: +s.widthMM || null, preset: PRESETS[s.preset] ? s.preset : 'woven' };
+    if (s.hoop && /^\d+x\d+$/.test(s.hoop)) S.hoop = s.hoop;
+    await intakeImage(img, j.name || 'design', state);
+  } catch (e) { status(st, 'err', "That isn't a StitchKit project file", 'Open a .json file saved from StitchKit, or upload an image instead.'); }
+}
+
+/* ---------- wiring ---------- */
+$('#file').addEventListener('change', e => intakeFile(e.target.files[0]));
+const drop = $('#drop');
+['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => intakeFile(e.dataTransfer.files[0]));
+document.addEventListener('paste', e => { if (S.step !== 1) return; const it = [...(e.clipboardData || {}).items || []].find(i => i.type.startsWith('image/')); if (it) intakeFile(it.getAsFile()); });
+$('#sample').addEventListener('click', async () => { const img = await loadImg('data:image/png;base64,' + SAMPLE_PNG); intakeImage(img, 'bird-of-paradise'); });
+$('#how').addEventListener('click', () => $('#howto').showModal());
+$('#privacy-open').addEventListener('click', () => $('#privacy').showModal());
+const hoopChange = v => { S.hoop = v; store.set('hoop', v); if (S.palette.length) { fitToHoop(); } syncControls(); draw(); };
+$('#hoop').addEventListener('change', e => hoopChange(e.target.value));
+$('#hoop2').addEventListener('change', e => hoopChange(e.target.value));
+$('#count').addEventListener('input', e => { $('#count-out').textContent = e.target.value; });
+$('#count').addEventListener('change', async e => { S.k = +e.target.value; S.merges = []; S.open = -1; await requant_(true); pushHist(); announce(`${S.palette.length} thread colors`); });
+$('#bg').addEventListener('change', async e => { S.removeBg = e.target.checked; S.merges = []; await requant_(true); pushHist(); });
+$('#preset').addEventListener('change', e => { S.preset = e.target.value; store.set('preset', S.preset); const p = PRESETS[S.preset];
+  S.colors.forEach(c => Object.assign(c, { density: p.density, stitchLen: p.stitchLen, pull: p.pull, underlay: p.underlay })); syncControls(); renderThreads(); pushHist(); schedulePlan(); });
+$('#width').addEventListener('change', e => { const v = Math.max(10, Math.min(400, +e.target.value || S.widthMM)); S.widthMM = v; syncControls(); pushHist(); schedulePlan(); });
+$('#fit').addEventListener('click', () => fitToHoop());
+$('#fabric').addEventListener('change', e => { if (e.target.name === 'fabric') { S.fabric = e.target.value; store.set('fabric', S.fabric); renderThreads(); draw(); renderStats(); } });
+$('#fabric-custom').addEventListener('input', e => { S.fabric = e.target.value; document.querySelectorAll('input[name=fabric]').forEach(r => { r.checked = false; }); draw(); });
+$('#fabric-custom').addEventListener('change', () => { store.set('fabric', S.fabric); renderThreads(); renderStats(); });
+$('#pv-orig').addEventListener('click', () => { S.view = 'orig'; syncView(); });
+$('#pv-stitch').addEventListener('click', () => { S.view = 'stitch'; syncView(); });
+$('#play').addEventListener('click', play);
+$('#undo').addEventListener('click', () => { if (hist.i > 0) restore(hist.i - 1).then(() => announce('Undone')); });
+$('#redo').addEventListener('click', () => { if (hist.i < hist.stack.length - 1) restore(hist.i + 1).then(() => announce('Redone')); });
+$('#to-download').addEventListener('click', () => { if (S.result) setStep(3); });
+$('#back-upload').addEventListener('click', newDesign);
+$('#back-work').addEventListener('click', () => setStep(2));
+$('#download').addEventListener('click', doDownload);
+document.querySelectorAll('input[name=fmt]').forEach(r => r.addEventListener('change', () => { $('#download').textContent = 'Download .' + fmt().toUpperCase(); }));
+$('#fname').addEventListener('change', e => { e.target.value = safeName(e.target.value); });
+$('#print-sheet').addEventListener('click', () => window.print());
+$('#save-project').addEventListener('click', saveProject);
+if (window.ResizeObserver) new ResizeObserver(() => draw()).observe($('#stage'));
+syncControls();
+
+/* ---------- offline app (PWA) ---------- */
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+  let reloading = false, wantReload = false; // only reload when the person chose to update
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (wantReload && !reloading) { reloading = true; location.reload(); } });
+  const offer = reg => {
+    const box = $('#update'); box.hidden = false;
+    box.querySelector('p').textContent = 'A new version of StitchKit is available.' + (S.result ? ' Save your project first if you want to keep this design.' : '');
+    $('#update-go').onclick = () => { wantReload = true; if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' }); else location.reload(); };
+    $('#update-later').onclick = () => { box.hidden = true; };
+  };
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      if (reg.waiting && navigator.serviceWorker.controller) offer(reg);
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing; if (!nw) return;
+        nw.addEventListener('statechange', () => { if (nw.state === 'installed' && navigator.serviceWorker.controller) offer(reg); });
+      });
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
+    }).catch(() => { /* offline support unavailable; the site still works online */ });
+  });
+}
+})();
+
+</script>
+</body>
+</html>
