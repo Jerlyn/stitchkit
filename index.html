@@ -54,7 +54,12 @@ p{margin:0 0 10px}
 .btn[disabled]{opacity:.55;cursor:not-allowed}
 .btn.big{min-height:52px;font-size:17px;width:100%}
 .drop{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;border:2px dashed var(--primary);border-radius:16px;background:var(--white);padding:44px 20px;cursor:pointer}
-.drop.over{background:#EFE9FB}
+.drop.over{background:#EFE9FB;border-style:solid;border-color:transparent;background-image:linear-gradient(90deg,var(--pink) 50%,transparent 50%),linear-gradient(90deg,var(--pink) 50%,transparent 50%),linear-gradient(0deg,var(--pink) 50%,transparent 50%),linear-gradient(0deg,var(--pink) 50%,transparent 50%);background-repeat:repeat-x,repeat-x,repeat-y,repeat-y;background-size:16px 3px,16px 3px,3px 16px,3px 16px;background-position:0 0,0 100%,0 0,100% 0;animation:march .6s linear infinite}
+@keyframes march{to{background-position:16px 0,-16px 100%,0 -16px,100% 16px}}
+.player{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;margin:12px auto 0;width:min(100%,640px)}
+.player .scrub{flex:1 1 220px;min-width:0}
+.player .scrub label{display:block;font-size:13px;font-weight:600}
+.player output{font-size:13px;color:var(--muted)}
 .drop:focus-within{outline:3px solid var(--primary);outline-offset:3px}
 .drop strong{font-size:18px}
 .drop u{color:var(--primary)}
@@ -81,9 +86,9 @@ fieldset{border:0;margin:0;padding:0;min-width:0}
 .swatch span{display:block;width:44px;height:44px;border-radius:50%;border:1px solid var(--muted)}
 .swatch input:checked+span{box-shadow:0 0 0 3px var(--white),0 0 0 6px var(--primary)}
 .swatch input:focus-visible+span{outline:3px solid var(--primary);outline-offset:6px}
-.stage{position:relative;border-radius:var(--radius);overflow:hidden;background:#2B3A55;aspect-ratio:1/1;max-height:640px;width:100%}
+.stage{position:relative;border-radius:var(--radius);overflow:hidden;background:var(--ink);aspect-ratio:1/1;width:min(100%,640px);margin:0 auto}
+@media (min-width:1000px){#view-work .grow{position:sticky;top:12px;align-self:flex-start}.stage{width:min(100%,calc(100vh - 250px),640px)}}
 .stage canvas{display:block;width:100%;height:100%}
-.stage .over{position:absolute;inset:auto 12px 12px auto;display:flex;gap:8px}
 .busy{position:absolute;left:12px;top:12px;background:var(--white);color:var(--text);border-radius:8px;padding:6px 10px;font-size:14px;font-weight:600}
 dl.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:14px 0 0}
 dl.stats div{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
@@ -212,8 +217,18 @@ dialog::backdrop{background:rgba(2,12,40,.6)}
       <div class="stage" id="stage">
         <canvas id="cv" role="img" aria-label="Stitch preview"></canvas>
         <div class="busy" id="busy" hidden>Updating stitches…</div>
-        <div class="over">
-          <button class="btn" type="button" id="play">Play stitch-out</button>
+      </div>
+      <div class="player" role="group" aria-label="Stitch-out player">
+        <button class="btn" type="button" id="play" aria-describedby="scrub-out">Play stitch-out</button>
+        <div class="scrub">
+          <label for="scrub">Stitch-out progress</label>
+          <input type="range" id="scrub" min="0" max="100" value="100" step="1" aria-describedby="scrub-out">
+          <output id="scrub-out" for="scrub"></output>
+        </div>
+        <div class="seg" role="group" aria-label="Playback speed">
+          <button type="button" data-speed="1" aria-pressed="false">1×</button>
+          <button type="button" data-speed="5" aria-pressed="true">5×</button>
+          <button type="button" data-speed="10" aria-pressed="false">10×</button>
         </div>
       </div>
       <dl class="stats" id="stats"></dl>
@@ -1077,7 +1092,7 @@ async function replan() {
   try {
     const r = await call('plan', { settings: { widthMM: S.widthMM, colors: S.colors, order: S.order } });
     if (my !== planSeq) return;
-    S.result = r; showBusy(false); draw(); renderStats(); updateCounts();
+    S.result = r; if (playing) stopPlay(false); playIdx = null; showBusy(false); draw(); renderStats(); updateCounts(); playerReadout(); $('#play').textContent = 'Play stitch-out';
   } catch (e) { showBusy(false); status($('#photo-warn'), 'err', 'Something went wrong while planning stitches', 'Try fewer colors or a different size. (' + e.message + ')'); }
 }
 function showBusy(b) { $('#busy').hidden = !b; }
@@ -1181,36 +1196,99 @@ function renderStats() {
 }
 
 /* ---------- preview drawing ---------- */
-let playing = 0, playFrac = 1;
+/* Studio preview: machine hoop to scale, woven fabric, thread sheen, stitch-out player */
+let playing = 0, playIdx = null, speed = 5, hoopAnim = null;
+const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const patCache = new Map();
+function fabricPattern(g, color) {
+  const key = color.toUpperCase(); if (patCache.has(key)) return patCache.get(key);
+  const c = document.createElement('canvas'), n = 12; c.width = c.height = n; const x = c.getContext('2d');
+  x.fillStyle = color; x.fillRect(0, 0, n, n);
+  const dark = lum(rgbOf(color)) < 0.3; x.strokeStyle = dark ? 'rgba(255,255,255,.10)' : 'rgba(2,12,40,.07)'; x.lineWidth = 1;
+  if (key === '#2B3A55') { for (let i = -n; i < n * 2; i += 4) { x.beginPath(); x.moveTo(i, n); x.lineTo(i + n, 0); x.stroke(); } } // twill
+  else if (key === '#E9DCC9') { x.strokeStyle = 'rgba(110,90,60,.16)'; [2, 8].forEach(v => { x.beginPath(); x.moveTo(0, v + .5); x.lineTo(n, v + .5); x.stroke(); x.beginPath(); x.moveTo(v + 3.5, 0); x.lineTo(v + 3.5, n); x.stroke(); }); } // slub canvas
+  else { for (let i = 0; i < n; i += 3) for (let j = 0; j < n; j += 3) if (((i + j) / 3) % 2 === 0) { x.fillStyle = x.strokeStyle; x.fillRect(i, j, 1.5, 1.5); } } // plain weave
+  const p = g.createPattern(c, 'repeat'); patCache.set(key, p); return p;
+}
+function shade(rgb, f) { return `rgb(${rgb.map(v => Math.max(0, Math.min(255, Math.round(f > 1 ? v + (255 - v) * (f - 1) : v * f)))).join(',')})`; }
+function rrect(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
+function setHoopAnimated(from) {
+  if (reduced() || !from) { hoopAnim = null; draw(); return; }
+  const t0 = performance.now(), to = hoopMM();
+  const step = t => { const k = Math.min(1, (t - t0) / 350), e = 1 - Math.pow(1 - k, 3);
+    hoopAnim = [from[0] + (to[0] - from[0]) * e, from[1] + (to[1] - from[1]) * e]; draw(); if (k < 1) requestAnimationFrame(step); else { hoopAnim = null; draw(); } };
+  requestAnimationFrame(step);
+}
 function draw() {
   const cv = $('#cv'); if (!cv || $('#view-work').hidden) return;
   const r = cv.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
   cv.width = Math.max(1, Math.round(r.width * dpr)); cv.height = Math.max(1, Math.round(r.height * dpr));
   const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
-  const W = r.width, H = r.height, fab = rgbOf(S.fabric);
-  g.fillStyle = S.fabric; g.fillRect(0, 0, W, H);
-  const [hw, hh] = hoopMM(); const sc = Math.min(W, H) * 0.9 / Math.max(hw, hh); const ox = W / 2, oy = H / 2;
-  const lineC = lum(fab) > 0.35 ? '#212529' : '#FFFFFF';
-  g.setLineDash([6, 6]); g.strokeStyle = lineC; g.lineWidth = 1.5; g.strokeRect(ox - hw * sc / 2, oy - hh * sc / 2, hw * sc, hh * sc); g.setLineDash([]);
-  g.fillStyle = lineC; g.font = '600 13px system-ui, sans-serif'; g.fillText(`Hoop ${hw} × ${hh} mm`, ox - hw * sc / 2, oy - hh * sc / 2 - 8 < 14 ? oy - hh * sc / 2 + 18 : oy - hh * sc / 2 - 8);
+  const W = r.width, H = r.height, ox = W / 2, oy = H / 2;
+  // studio mat
+  g.fillStyle = '#020C28'; g.fillRect(0, 0, W, H);
+  g.strokeStyle = 'rgba(74,222,222,.07)'; g.lineWidth = 1; for (let v = 12; v < Math.max(W, H); v += 24) { g.beginPath(); g.moveTo(v + .5, 0); g.lineTo(v + .5, H); g.moveTo(0, v + .5); g.lineTo(W, v + .5); g.stroke(); }
+  const [hw, hh] = hoopAnim || hoopMM(), frame = 14; // frame width in mm around the sewing field
+  const sc = Math.min((W * 0.94) / (hw + frame * 3.8), (H * 0.86) / (hh + frame * 2));
+  const shift = frame * 0.9 * sc; // room for the mounting bracket on the left
+  const fx = ox - hw * sc / 2 + shift / 2, fy = oy - hh * sc / 2 - 8, fw = hw * sc, fh = hh * sc, fr = frame * sc;
+  // plastic machine hoop: outer frame, mounting bracket on the left, inner ring
+  g.save(); g.shadowColor = 'rgba(0,0,0,.45)'; g.shadowBlur = 18; g.shadowOffsetY = 6;
+  g.fillStyle = '#D9DEE5'; rrect(g, fx - fr, fy - fr, fw + fr * 2, fh + fr * 2, fr * 1.2); g.fill(); g.restore();
+  g.fillStyle = '#BCC3CD'; rrect(g, fx - fr - fr * 0.9, oy - fh * 0.18, fr * 1.1, fh * 0.36, fr * 0.3); g.fill();
+  g.fillStyle = '#AEB6C1'; rrect(g, fx - fr * 0.45, fy - fr * 0.45, fw + fr * 0.9, fh + fr * 0.9, fr * 0.7); g.fill();
+  // fabric inside the hoop
+  g.save(); rrect(g, fx - fr * 0.3, fy - fr * 0.3, fw + fr * 0.6, fh + fr * 0.6, fr * 0.55); g.clip();
+  g.fillStyle = fabricPattern(g, S.fabric); g.fillRect(fx - fr, fy - fr, fw + fr * 2, fh + fr * 2);
+  g.fillStyle = 'rgba(2,12,40,.18)'; g.fillRect(fx - fr, fy - fr, fw + fr * 2, fr * 0.25);
+  // sewing field and ruler ticks (exact millimetres)
+  const fab = rgbOf(S.fabric), ink = lum(fab) > 0.35 ? 'rgba(33,37,41,' : 'rgba(255,255,255,';
+  g.setLineDash([5, 5]); g.strokeStyle = ink + '.75)'; g.lineWidth = 1.2; g.strokeRect(fx, fy, fw, fh); g.setLineDash([]);
+  g.strokeStyle = ink + '.55)'; g.lineWidth = 1;
+  for (let m = 0; m <= hw; m += 5) { const L = m % 10 ? 4 : 8, x = fx + m * sc; g.beginPath(); g.moveTo(x, fy); g.lineTo(x, fy + L); g.moveTo(x, fy + fh); g.lineTo(x, fy + fh - L); g.stroke(); }
+  for (let m = 0; m <= hh; m += 5) { const L = m % 10 ? 4 : 8, y = fy + m * sc; g.beginPath(); g.moveTo(fx, y); g.lineTo(fx + L, y); g.moveTo(fx + fw, y); g.lineTo(fx + fw - L, y); g.stroke(); }
+  g.setLineDash([2, 4]); g.strokeStyle = 'rgba(222,99,153,.45)'; g.beginPath(); g.moveTo(ox, fy); g.lineTo(ox, fy + fh); g.moveTo(fx, oy); g.lineTo(fx + fw, oy); g.stroke(); g.setLineDash([]);
   if (S.view === 'orig' && S.preview) {
-    const w = S.widthMM * sc, hgt = S.widthMM * S.aspect * sc;
-    // crop preview to content box by drawing full image scaled to content aspect
-    g.imageSmoothingEnabled = false; g.drawImage(S.preview, ...cropBox(), ox - w / 2, oy - hgt / 2, w, hgt); return;
+    const w = S.widthMM * sc, hgt = S.widthMM * S.aspect * sc; g.imageSmoothingEnabled = false;
+    g.drawImage(S.preview, ...cropBox(), ox - w / 2, oy - hgt / 2, w, hgt);
+  } else if (S.result) drawStitches(g, sc, ox, oy);
+  g.restore();
+  // dimension badge
+  const label = `${Math.round(hw)} × ${Math.round(hh)} mm`; g.font = '600 12px ui-monospace, SFMono-Regular, Menlo, monospace';
+  const tw = g.measureText(label).width + 20, bx = ox - tw / 2, by = fy + fh + fr + 8 > H - 26 ? H - 28 : fy + fh + fr + 8;
+  g.fillStyle = 'rgba(2,12,40,.9)'; rrect(g, bx, by, tw, 22, 11); g.fill(); g.strokeStyle = 'rgba(74,222,222,.6)'; g.stroke();
+  g.fillStyle = '#FFFFFF'; g.fillText(label, bx + 10, by + 15);
+}
+function drawStitches(g, sc, ox, oy) {
+  const st = S.result.stitches, th = S.result.threads, end = playIdx == null ? st.length : playIdx;
+  const lw = Math.max(1, 0.4 * sc), P = (x, y) => [ox + x / 10 * sc, oy + y / 10 * sc];
+  g.lineCap = 'round';
+  // pass 1: soft shadow under the thread; pass 2: thread with sheen by stitch direction (4 bands)
+  for (const pass of [0, 1]) {
+    let ti = 0, prev = null, paths = [new Path2D(), new Path2D(), new Path2D(), new Path2D()];
+    const flush = () => { const rgb = th[ti] || [0, 0, 0];
+      if (pass === 0) { g.strokeStyle = 'rgba(0,0,0,.28)'; g.lineWidth = lw * 1.1; g.save(); g.translate(0, Math.max(.6, lw * .35)); paths.forEach(p => g.stroke(p)); g.restore(); }
+      else [0.78, 0.92, 1.06, 1.2].forEach((f, i) => { g.strokeStyle = shade(rgb, f); g.lineWidth = lw; g.stroke(paths[i]); });
+      paths = [new Path2D(), new Path2D(), new Path2D(), new Path2D()]; };
+    for (let i = 0; i < end; i++) {
+      const [x, y, c] = st[i];
+      if (c === 4) { flush(); ti++; prev = null; continue; }
+      if (c !== 1) { prev = null; continue; }
+      const p = P(x, y);
+      if (prev) { const a = Math.atan2(p[1] - prev[1], p[0] - prev[0]), band = Math.min(3, Math.floor(Math.abs(Math.cos(a - Math.PI / 4)) * 4));
+        paths[band].moveTo(prev[0], prev[1]); paths[band].lineTo(p[0], p[1]); }
+      prev = p;
+    }
+    flush();
   }
-  if (!S.result) return;
-  const st = S.result.stitches, th = S.result.threads, end = Math.floor(st.length * playFrac);
-  g.lineCap = 'round'; g.lineJoin = 'round'; g.lineWidth = Math.max(1, 0.38 * sc);
-  let ti = 0, prev = null; g.strokeStyle = hex(th[0] || [0, 0, 0]); g.beginPath();
-  for (let i = 0; i < end; i++) {
-    const [x, y, c] = st[i];
-    if (c === 4) { g.stroke(); ti++; g.strokeStyle = hex(th[ti] || [0, 0, 0]); g.beginPath(); prev = null; continue; }
-    if (c !== 1) { prev = null; continue; }
-    const px = ox + x / 10 * sc, py = oy + y / 10 * sc;
-    if (prev) { g.moveTo(prev[0], prev[1]); g.lineTo(px, py); }
-    prev = [px, py];
+  if (playIdx != null) { // jumps so far, then the needle
+    g.setLineDash([3, 3]); g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 1; g.beginPath();
+    for (let i = 1; i < end; i++) if (st[i][2] === 2) { const a = P(st[i - 1][0], st[i - 1][1]), b = P(st[i][0], st[i][1]); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); }
+    g.stroke(); g.setLineDash([]);
+    const s = st[Math.max(0, end - 1)], n = P(s[0], s[1]);
+    g.lineWidth = 3; g.strokeStyle = '#FFFFFF'; g.beginPath(); g.arc(n[0], n[1], 7, 0, Math.PI * 2); g.stroke();
+    g.lineWidth = 2; g.strokeStyle = '#DE6399'; g.beginPath(); g.arc(n[0], n[1], 7, 0, Math.PI * 2); g.moveTo(n[0] - 11, n[1]); g.lineTo(n[0] + 11, n[1]); g.moveTo(n[0], n[1] - 11); g.lineTo(n[0], n[1] + 11); g.stroke();
   }
-  g.stroke();
 }
 function cropBox() { // content box of quantized preview (non-transparent)
   if (S._crop && S._crop.src === S.preview) return S._crop.box;
@@ -1218,12 +1296,26 @@ function cropBox() { // content box of quantized preview (non-transparent)
   for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) if (d[(y * c.width + x) * 4 + 3]) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
   const box = x1 < x0 ? [0, 0, c.width, c.height] : [x0, y0, x1 - x0 + 1, y1 - y0 + 1]; S._crop = { src: c, box }; return box;
 }
+function playerReadout() {
+  if (!S.result) return;
+  const st = S.result.stitches, n = st.length, end = playIdx == null ? n : playIdx;
+  let color = 0, done = 0; for (let i = 0; i < end; i++) { if (st[i][2] === 4) color++; else if (st[i][2] === 1) done++; }
+  const total = S.result.stats.count, ci = S.order.filter(i => !S.colors[i].skip)[Math.min(color, S.result.threads.length - 1)];
+  const name = S.colors[ci] ? S.colors[ci].name : '';
+  const sc = $('#scrub'); sc.max = n; sc.value = end;
+  const text = end >= n ? `Finished: ${total.toLocaleString()} stitches in ${S.result.threads.length} colors` : `Color ${Math.min(color + 1, S.result.threads.length)} of ${S.result.threads.length} (${name}), stitch ${done.toLocaleString()} of ${total.toLocaleString()}`;
+  $('#scrub-out').textContent = text; sc.setAttribute('aria-valuetext', text);
+}
+function stopPlay(announceIt) { if (playing) cancelAnimationFrame(playing); playing = 0; $('#play').textContent = playIdx == null || playIdx >= S.result.stitches.length ? 'Play stitch-out' : 'Resume'; if (announceIt) announce('Paused. ' + $('#scrub-out').textContent); }
 function play() {
-  const btn = $('#play');
-  if (playing) { cancelAnimationFrame(playing); playing = 0; playFrac = 1; draw(); btn.textContent = 'Play stitch-out'; return; }
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { announce('Animation is off because your device prefers reduced motion. Showing the finished design.'); return; }
-  S.view = 'stitch'; syncView(); const t0 = performance.now(), dur = 7000; btn.textContent = 'Stop';
-  const step = t => { playFrac = Math.min(1, (t - t0) / dur); draw(); if (playFrac < 1) playing = requestAnimationFrame(step); else { playing = 0; btn.textContent = 'Play stitch-out'; } };
+  if (!S.result) return;
+  if (playing) return stopPlay(true);
+  S.view = 'stitch'; syncView();
+  const n = S.result.stitches.length; if (playIdx == null || playIdx >= n) playIdx = 0;
+  $('#play').textContent = 'Pause'; let last = performance.now();
+  const step = t => { playIdx = Math.min(n, playIdx + Math.max(1, Math.round((t - last) / 1000 * 100 * speed))); last = t;
+    draw(); playerReadout();
+    if (playIdx < n) playing = requestAnimationFrame(step); else { playing = 0; playIdx = null; draw(); playerReadout(); $('#play').textContent = 'Play stitch-out'; announce('Stitch-out finished'); } };
   playing = requestAnimationFrame(step);
 }
 function syncView() { $('#pv-orig').setAttribute('aria-pressed', S.view === 'orig'); $('#pv-stitch').setAttribute('aria-pressed', S.view === 'stitch'); draw(); }
@@ -1306,7 +1398,7 @@ document.addEventListener('paste', e => { if (S.step !== 1) return; const it = [
 $('#sample').addEventListener('click', async () => { const img = await loadImg('data:image/png;base64,' + SAMPLE_PNG); intakeImage(img, 'bird-of-paradise'); });
 $('#how').addEventListener('click', () => $('#howto').showModal());
 $('#privacy-open').addEventListener('click', () => $('#privacy').showModal());
-const hoopChange = v => { S.hoop = v; store.set('hoop', v); if (S.palette.length) { fitToHoop(); } syncControls(); draw(); };
+const hoopChange = v => { const from = hoopMM(); S.hoop = v; store.set('hoop', v); if (S.palette.length) { fitToHoop(); } syncControls(); setHoopAnimated(from); };
 $('#hoop').addEventListener('change', e => hoopChange(e.target.value));
 $('#hoop2').addEventListener('change', e => hoopChange(e.target.value));
 $('#count').addEventListener('input', e => { $('#count-out').textContent = e.target.value; });
@@ -1322,6 +1414,8 @@ $('#fabric-custom').addEventListener('change', () => { store.set('fabric', S.fab
 $('#pv-orig').addEventListener('click', () => { S.view = 'orig'; syncView(); });
 $('#pv-stitch').addEventListener('click', () => { S.view = 'stitch'; syncView(); });
 $('#play').addEventListener('click', play);
+$('#scrub').addEventListener('input', e => { if (!S.result) return; if (playing) stopPlay(false); const v = +e.target.value; playIdx = v >= S.result.stitches.length ? null : v; if (S.view !== 'stitch') { S.view = 'stitch'; syncView(); } else draw(); playerReadout(); $('#play').textContent = playIdx == null ? 'Play stitch-out' : 'Resume'; });
+document.querySelectorAll('[data-speed]').forEach(b => b.addEventListener('click', () => { speed = +b.dataset.speed; document.querySelectorAll('[data-speed]').forEach(x => x.setAttribute('aria-pressed', x === b)); announce(`Speed ${speed} times`); }));
 $('#undo').addEventListener('click', () => { if (hist.i > 0) restore(hist.i - 1).then(() => announce('Undone')); });
 $('#redo').addEventListener('click', () => { if (hist.i < hist.stack.length - 1) restore(hist.i + 1).then(() => announce('Redone')); });
 $('#to-download').addEventListener('click', () => { if (S.result) setStep(3); });

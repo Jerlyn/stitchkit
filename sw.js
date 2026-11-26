@@ -1,6 +1,6 @@
 /* StitchKit service worker: keeps the app available offline.
    Bump VERSION on every release so installed copies pick up the update. */
-const VERSION = 'stitchkit-v1.0.1';
+const VERSION = 'stitchkit-v1.0.2';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
