@@ -30,6 +30,7 @@ Bump `VERSION` in `sw.js` (for example `stitchkit-v1.0.1`) in the same commit as
 Visits and downloads are counted with [GoatCounter](https://www.goatcounter.com) (no cookies, no personal data). To show the public "designs converted" count on the success screen, enable **Settings → "Allow adding visitor counts on your website"** in GoatCounter.
 
 ## Changelog
+- **1.0.4:** fixes thread breaks on small designs and lettering. Every stitch is now at least 1 mm long (shorter ones piled into one hole), tie-ins and tie-offs are 1 mm, thin shapes always fill along their length, and DST trims no longer shift the needle position.
 - **1.0.3:** starter sample gallery (bird, geometric badge, monogram), thread spool cards with machine color number and stitch-count badge, live "works best with" examples (flat logo vs photo) rendered by the engine.
 
 ## Limitations (v1)
